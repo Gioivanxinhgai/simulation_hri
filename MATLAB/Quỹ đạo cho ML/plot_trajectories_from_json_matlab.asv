@@ -1,0 +1,154 @@
+% plot_trajectories_from_json_matlab.m
+function plot_trajectories_from_json_matlab(json_file_path)
+% PLOT_TRAJECTORIES_FROM_JSON_MATLAB Đọc danh sách tệp CSV từ JSON và vẽ quỹ đạo,
+%                                    thêm đánh dấu điểm bắt đầu và các điểm đích (Target).
+    % Tọa độ GỐC (CHƯA scale) cho 3 Target của bạn
+    TARGETS_UNSCALED = [
+         10,  10;   % Target 1 (10, 10)
+        -13,   5;   % Target 2 (-13, 5)
+          5, -13;   % Target 3 (5, -13)
+    ];
+    % Hằng số scale 
+    SCALE_FACTOR = 0.03; 
+    % Thiết lập font và kích thước cho đồ thị
+    set(0, 'DefaultAxesFontName', 'Times New Roman');
+    set(0, 'DefaultAxesFontSize', 12);
+    set(0, 'DefaultTextFontName', 'Times New Roman');
+    set(0, 'DefaultTextFontSize', 12);
+    
+    try
+        % 1. Mở và đọc tệp JSON
+        json_str = fileread(json_file_path);
+        trajectory_files = jsondecode(json_str);
+        
+        if ~iscell(trajectory_files)
+            trajectory_files = cellstr(trajectory_files);
+        end
+        
+        % Khởi tạo biểu đồ
+        figure('Units','inches','Position',[0 0 4.3 4.3]); 
+        ax = gca; 
+        hold(ax, 'on');
+        
+        % Lấy thư mục chứa tệp JSON
+        [json_dir, ~, ~] = fileparts(json_file_path);
+        
+        % 2. Vòng lặp qua từng tên tệp
+        for i = 1:length(trajectory_files)
+            file_name = trajectory_files{i};
+            
+            try
+                csv_path = fullfile(json_dir, file_name);
+                df = readtable(csv_path);
+                
+                if ismember('x', df.Properties.VariableNames) && ismember('y', df.Properties.VariableNames)
+                    
+                    % SCALE QUỸ ĐẠO
+                    x_data = df.x * SCALE_FACTOR; 
+                    y_data = df.y * SCALE_FACTOR; 
+                    
+                    % 4. Xác định màu sắc và kiểu đường
+                    color = get_trajectory_color_matlab(file_name);
+                    linestyle = get_trajectory_linestyle_matlab(file_name);
+                    
+                    % Vẽ quỹ đạo
+                    plot(ax, x_data, y_data, 'Color', color, 'LineStyle', linestyle, ...
+                         'LineWidth', 1.0, 'DisplayName', file_name, 'Marker', 'none');
+
+                    % 📢 ĐÁNH DẤU ĐIỂM BẮT ĐẦU (Start Point)
+                    plot(ax, x_data(1), y_data(1), 'o', 'MarkerEdgeColor', 'k', ...
+                        'MarkerFaceColor', 'w', 'MarkerSize', 8, 'LineWidth', 1.0);
+     
+                    % Thêm chữ "Start Point" (Chỉ in 1 lần ở vòng lặp đầu tiên)
+                    if i == 1
+                        % Offset (-0.02, -0.03) để chữ nằm hơi lệch xuống dưới bên trái tâm
+                        text(ax, x_data(1) - 0.02, y_data(1) - 0.03, 'Start Point', ...
+                            'FontSize', 12, 'FontName', 'Times New Roman', ...
+                            'HorizontalAlignment', 'right');
+                    end
+                         
+                    
+                    
+                else
+                    disp(['Lỗi: Tệp ', csv_path, ' không chứa các cột ''x'' hoặc ''y''.']);
+                end
+                
+            catch ME
+                if strcmp(ME.identifier, 'MATLAB:FileIO:FileNotFound')
+                    disp(['Lỗi: Không tìm thấy tệp ', csv_path, '. Vui lòng kiểm tra đường dẫn.']);
+                else
+                    disp(['Lỗi khi xử lý tệp ', csv_path, ': ', ME.message]);
+                end
+            end
+        end
+        
+        % 📢 THÊM 3 TARGET (Không có chú thích)
+        % 📢 THÊM 3 TARGET (CÓ CHÚ THÍCH)
+        % 📢 THÊM 3 TARGET (CÓ CHÚ THÍCH TINH CHỈNH VỊ TRÍ)
+        for t = 1:size(TARGETS_UNSCALED, 1)
+            target_x = TARGETS_UNSCALED(t, 1) * SCALE_FACTOR;
+            target_y = TARGETS_UNSCALED(t, 2) * SCALE_FACTOR;
+            
+            % Vẽ dấu tròn trắng cho Target
+            plot(ax, target_x, target_y, 'o', 'MarkerEdgeColor', 'k', ...
+                 'MarkerFaceColor', 'w', 'MarkerSize', 8, 'LineWidth', 1.0);
+                 
+            % Tinh chỉnh vị trí chữ độc lập cho từng Target để không đè lên quỹ đạo
+            if t == 1
+                % Target 1 (Góc trên phải): Đặt chữ nằm ngay phía TRÊN điểm
+                text(ax, target_x, target_y + 0.015, 'Target 1', ...
+                    'FontSize', 12, 'FontName', 'Times New Roman', ...
+                    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
+            
+            elseif t == 3
+                % Target 3 (Góc dưới): Đặt chữ nằm ngay phía DƯỚI điểm
+                text(ax, target_x, target_y - 0.02, 'Target 3', ...
+                    'FontSize', 12, 'FontName', 'Times New Roman', ...
+                    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top');
+            end
+        end
+        % 5. Cấu hình và hiển thị biểu đồ
+        
+        xlabel(ax, 'X-Position (m)'); 
+        ylabel(ax, 'Y-Position (m)'); 
+        
+        axis(ax, 'equal'); 
+        % axis(ax, 'tight'); % <-- Xóa hoặc thêm % để vô hiệu hóa dòng này
+        
+        % Tự động nới rộng khung hình thêm 15% để có chỗ trống hiển thị chữ
+        xl = xlim(ax); yl = ylim(ax);
+        x_margin = (xl(2) - xl(1)) * 0.15;
+        y_margin = (yl(2) - yl(1)) * 0.15;
+        xlim(ax, [xl(1) - x_margin, xl(2) + x_margin]);
+        ylim(ax, [yl(1) - y_margin, yl(2) + y_margin]);
+        
+        drawnow;
+    catch ME
+        if strcmp(ME.identifier, 'MATLAB:FileIO:FileNotFound')
+            disp(['Lỗi: Không tìm thấy tệp ', json_file_path, '. Vui lòng kiểm tra đường dẫn.']);
+        else
+            disp(['Lỗi khi xử lý tệp JSON: ', ME.message]);
+        end
+    end
+end
+% --- Hàm hỗ trợ get_trajectory_color_matlab và get_trajectory_linestyle_matlab giữ nguyên ---
+function color = get_trajectory_color_matlab(file_name)
+    tokens = regexp(file_name, 'trajectories_(\d+)\.csv', 'tokens', 'once');
+    if ~isempty(tokens)
+        traj_num = str2double(tokens{1});
+        if traj_num >= 1 && traj_num <= 20
+            color = [0, 0.4470, 0.7410]; % Xanh dương (Blue)
+        elseif traj_num >= 61 && traj_num <= 80
+            color = [0, 0.4470, 0.7410]; % Cam/Đỏ (Orange/Red)
+        elseif traj_num >= 161 && traj_num <= 180
+            color = [0, 0.4470, 0.7410]; % Xanh lá (Green)
+        else
+            color = [0, 0, 0];
+        end
+    else
+        color = [0 0.5 0];
+    end
+end
+function linestyle = get_trajectory_linestyle_matlab(file_name)
+    linestyle = '-'; 
+end

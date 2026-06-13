@@ -1,0 +1,4 @@
+Accuracy: 93.65%
+Data: Experiment_Train_Trajectory_HRI
+K Range: 10-20
+Note: Models trained using BIC minimization on 3D trajectories (X, Y, Z).

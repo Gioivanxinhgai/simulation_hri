@@ -1,0 +1,10 @@
+# Bỏ qua các file thư mục tự động sinh ra
+csv_logs/
+compare_mjm_plots/
+__pycache__/
+*.pkl
+*.png
+*.csv
+
+# Tuy nhiên, giữ lại thư mục test ground truth
+!Experiment_Test_Trajectory_HRI/*.csv

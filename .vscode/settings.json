@@ -1,0 +1,20 @@
+{
+    "python.defaultInterpreterPath": "python",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.terminal.executeInFileDir": true,
+    "python.terminal.launchArgs": [],
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.terminal.activateEnvInCurrentTerminal.enableTelemetry": false,
+    "python.terminal.activateEnvInCurrentTerminal.allowEnvironments": [
+        "base",
+        "conda",
+        "venv",
+        "env",
+        ".venv",
+        ".env"
+    ],
+    "cursorpyright.analysis.typeCheckingMode": "basic"
+} 

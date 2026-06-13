@@ -1,0 +1,12 @@
+[
+    {
+        "key": "f5",
+        "command": "python.execInTerminal",
+        "when": "editorTextFocus && !inDebugRepl && !isInDiffEditor"
+    },
+    {
+        "key": "shift+f5",
+        "command": "workbench.action.debug.stop",
+        "when": "debuggersAvailable && inDebugMode"
+    }
+] 

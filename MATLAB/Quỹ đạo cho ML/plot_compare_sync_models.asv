@@ -1,0 +1,281 @@
+function plot_compare_sync_models(csv_file_A, csv_file_B)
+    % ==========================================
+    % THIẾT LẬP THẨM MỸ CHUẨN XUẤT EPS
+    % ==========================================
+    fontsize = 24;
+    linewidth_line = 3;
+    
+    % Màu xám đặc (Solid) thay vì FaceAlpha để giữ chuẩn Vector cho EPS
+    ci_color = [0.85 0.85 0.85]; 
+    
+    % [ĐÃ SỬA BỐ CỤC] Thu hẹp lề và nới rộng diện tích lõi đồ thị
+    % [Lề trái (15%), Lề dưới (16%), Chiều rộng (82%), Chiều cao (81%)]
+    fixed_position = [0.15, 0.16, 0.82, 0.81]; 
+    
+    set(0, 'DefaultAxesFontName', 'Times New Roman');
+    set(0, 'DefaultAxesFontSize', fontsize);
+    set(0, 'DefaultTextFontName', 'Times New Roman');
+    set(0, 'DefaultTextFontSize', fontsize);
+    set(0, 'DefaultLegendFontSize', 14); 
+    
+    % --- Đọc dữ liệu ---
+    [tA, oxA, pxA, lxA, uxA, oyA, pyA, lyA, uyA] = read_and_scale(csv_file_A);
+    [tB, oxB, pxB, lxB, uxB, oyB, pyB, lyB, uyB] = read_and_scale(csv_file_B);
+    
+    % Thời điểm cần đánh dấu
+    t_mark = 4; 
+    legend_str = sprintf('$t = %g$ s', t_mark);
+    
+    % ==========================================
+    % 1. SO SÁNH TRỤC X(t)
+    % ==========================================
+    fig1A = figure('Name', 'Model A: X(t)', 'Units','inches','Position',[0.5 0 5.95 5.7], 'Color', 'w'); 
+    ax1A = axes(fig1A); hold(ax1A, 'on');
+    
+    fill(ax1A, [tA; flipud(tA)], [lxA; flipud(uxA)], ci_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    plot(ax1A, tA, oxA, 'b-', 'LineWidth', linewidth_line, 'HandleVisibility', 'off'); 
+    plot(ax1A, tA, pxA, 'r--', 'LineWidth', linewidth_line, 'HandleVisibility', 'off');  
+    
+    % Chỉ đánh dấu giá trị Quan sát (obs)
+    val_1A_obs = interp1(tA, oxA, t_mark);
+    axis(ax1A, 'tight'); yl1A = ax1A.YLim; 
+    plot(ax1A, t_mark, val_1A_obs, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    ax1A.YLim = yl1A; 
+    
+    xlabel(ax1A, 'Time (s)', 'Interpreter', 'latex'); ylabel(ax1A, '$x$ (m)', 'Interpreter', 'latex');
+    box(ax1A, 'on'); grid(ax1A, 'off');
+    set(ax1A, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+    
+    fig1B = figure('Name', 'Model B: X(t)', 'Units','inches','Position',[0.5 1.0 5.95 5.7], 'Color', 'w'); 
+    ax1B = axes(fig1B); hold(ax1B, 'on');
+    
+    fill(ax1B, [tB; flipud(tB)], [lxB; flipud(uxB)], ci_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    plot(ax1B, tB, oxB, 'b-', 'LineWidth', linewidth_line, 'HandleVisibility', 'off'); 
+    plot(ax1B, tB, pxB, 'r--', 'LineWidth', linewidth_line, 'HandleVisibility', 'off');  
+    
+    % Chỉ đánh dấu giá trị Quan sát (obs)
+    val_1B_obs = interp1(tB, oxB, t_mark);
+    axis(ax1B, 'tight'); yl1B = ax1B.YLim;
+    plot(ax1B, t_mark, val_1B_obs, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    ax1B.YLim = yl1B;
+    
+    xlabel(ax1B, 'Time (s)', 'Interpreter', 'latex'); ylabel(ax1B, '$x$ (m)', 'Interpreter', 'latex');
+    box(ax1B, 'on'); grid(ax1B, 'off');
+    set(ax1B, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+    
+    % ==========================================
+    % 2. SO SÁNH TRỤC Y(t)
+    % ==========================================
+    fig2A = figure('Name', 'Model A: Y(t)', 'Units','inches','Position',[1.0 .5 5.95 5.7], 'Color', 'w'); 
+    ax2A = axes(fig2A); hold(ax2A, 'on');
+    
+    fill(ax2A, [tA; flipud(tA)], [lyA; flipud(uyA)], ci_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    plot(ax2A, tA, oyA, 'b-', 'LineWidth', linewidth_line, 'HandleVisibility', 'off'); 
+    plot(ax2A, tA, pyA, 'r--', 'LineWidth', linewidth_line, 'HandleVisibility', 'off');  
+    
+    % Gắn Legend vào CHẤM ĐẦU TIÊN (obs) của Hình 2A
+    val_2A_obs = interp1(tA, oyA, t_mark);
+    axis(ax2A, 'tight'); yl2A = ax2A.YLim;
+    plot(ax2A, t_mark, val_2A_obs, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'DisplayName', legend_str);
+    ax2A.YLim = yl2A;
+    
+    xlabel(ax2A, 'Time (s)', 'Interpreter', 'latex'); ylabel(ax2A, '$y$ (m)', 'Interpreter', 'latex');
+    legend(ax2A, 'Interpreter', 'latex', 'Location', 'southeast');
+    
+    box(ax2A, 'on'); grid(ax2A, 'off');
+    set(ax2A, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+    
+    fig2B = figure('Name', 'Model B: Y(t)', 'Units','inches','Position',[1.0 1.0 6.1 5.7], 'Color', 'w'); 
+    ax2B = axes(fig2B); hold(ax2B, 'on');
+    
+    fill(ax2B, [tB; flipud(tB)], [lyB; flipud(uyB)], ci_color, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    plot(ax2B, tB, oyB, 'b-', 'LineWidth', linewidth_line, 'HandleVisibility', 'off'); 
+    plot(ax2B, tB, pyB, 'r--', 'LineWidth', linewidth_line, 'HandleVisibility', 'off');  
+    
+    % Chỉ đánh dấu giá trị Quan sát (obs)
+    val_2B_obs = interp1(tB, oyB, t_mark);
+    axis(ax2B, 'tight'); yl2B = ax2B.YLim;
+    plot(ax2B, t_mark, val_2B_obs, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    ax2B.YLim = yl2B;
+    
+    xlabel(ax2B, 'Time (s)', 'Interpreter', 'latex'); ylabel(ax2B, '$y$ (m)', 'Interpreter', 'latex');
+    box(ax2B, 'on'); grid(ax2B, 'off');
+    set(ax2B, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+    
+    % ==========================================
+    % 3. SO SÁNH QUỸ ĐẠO 2D Y(x)
+    % ==========================================
+    fig3A = figure('Name', 'Model A: Quỹ đạo', 'Units','inches','Position',[0.5 1.5 5.95 5.7], 'Color', 'w'); 
+    ax3A = axes(fig3A); hold(ax3A, 'on');
+    
+    plot(ax3A, oxA, oyA, 'b-', 'LineWidth', linewidth_line, 'HandleVisibility', 'off'); 
+    plot(ax3A, pxA, pyA, 'r--', 'LineWidth', linewidth_line, 'HandleVisibility', 'off');  
+    
+    % Đánh dấu cho CẢ giá trị Quan sát (obs) và Dự đoán (pred)
+    x_obs_A = interp1(tA, oxA, t_mark); 
+    y_obs_A = interp1(tA, oyA, t_mark);
+    x_pred_A = interp1(tA, pxA, t_mark); 
+    y_pred_A = interp1(tA, pyA, t_mark);
+    
+    axis(ax3A, 'tight'); 
+    xl3A = ax3A.XLim; yl3A = ax3A.YLim;
+    plot(ax3A, x_obs_A, y_obs_A, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    plot(ax3A, x_pred_A, y_pred_A, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    ax3A.XLim = xl3A; ax3A.YLim = yl3A; 
+    
+    xlabel(ax3A, '$x$ (m)', 'Interpreter', 'latex'); ylabel(ax3A, '$y$ (m)', 'Interpreter', 'latex');
+    box(ax3A, 'on'); grid(ax3A, 'off');
+    set(ax3A, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+    
+    % -- (Làm tương tự cho Model B) --
+    fig3B = figure('Name', 'Model B: Quỹ đạo', 'Units','inches','Position',[1.5 0.5 5.85 5.7], 'Color', 'w'); 
+    ax3B = axes(fig3B); hold(ax3B, 'on');
+    
+    plot(ax3B, oxB, oyB, 'b-', 'LineWidth', linewidth_line, 'HandleVisibility', 'off'); 
+    plot(ax3B, pxB, pyB, 'r--', 'LineWidth', linewidth_line, 'HandleVisibility', 'off');  
+    
+    % Đánh dấu cho CẢ giá trị Quan sát (obs) và Dự đoán (pred)
+    x_obs_B = interp1(tB, oxB, t_mark); 
+    y_obs_B = interp1(tB, oyB, t_mark);
+    x_pred_B = interp1(tB, pxB, t_mark); 
+    y_pred_B = interp1(tB, pyB, t_mark);
+    
+    axis(ax3B, 'tight');
+    xl3B = ax3B.XLim; yl3B = ax3B.YLim;
+    plot(ax3B, x_obs_B, y_obs_B, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    plot(ax3B, x_pred_B, y_pred_B, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6, 'HandleVisibility', 'off');
+    ax3B.XLim = xl3B; ax3B.YLim = yl3B;
+    
+    xlabel(ax3B, '$x$ (m)', 'Interpreter', 'latex'); ylabel(ax3B, '$y$ (m)', 'Interpreter', 'latex');
+    box(ax3B, 'on'); grid(ax3B, 'off');
+    set(ax3B, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+    
+    % ==========================================
+    % ĐỒNG BỘ CƠ BẢN
+    % ==========================================
+    linkaxes([ax1A, ax1B], 'xy');
+    linkaxes([ax2A, ax2B], 'xy');
+    linkaxes([ax3A, ax3B], 'xy');
+    
+    % ==========================================
+    % XỬ LÝ TICK VÀ ÉP SÁT NHÃN TRỤC (LABELS)
+    % ==========================================
+    % 1D Plots: Chỉ trục Y, 1 chữ số thập phân
+    axes_1d = [ax1A, ax1B, ax2A, ax2B];
+    apply_1d_y_ticks(axes_1d);
+    
+    % 2D Plots: Cả trục X và Y, 2 chữ số thập phân
+    axes_2d = [ax3A, ax3B];
+    apply_2d_xy_ticks(axes_2d);
+    
+    % Ép sát nhãn (label) cho toàn bộ 6 axes
+    nudge_labels([axes_1d, axes_2d]);
+    
+    % ==========================================
+    % XUẤT 6 FILE EPS CHUẨN VECTOR
+    % ==========================================
+    drawnow;
+    exportgraphics(fig1A, 'ModelA_Xt.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig1B, 'ModelB_Xt.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig2A, 'ModelA_Yt.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig2B, 'ModelB_Yt.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig3A, 'ModelA_Yx.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig3B, 'ModelB_Yx.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    
+    fprintf('Đã xuất thành công 6 file .eps với bố cục căng tràn hoàn hảo!\n');
+    
+    % Xóa cấu hình Default
+    set(0, 'DefaultAxesFontName', 'remove');
+    set(0, 'DefaultAxesFontSize', 'remove');
+    set(0, 'DefaultTextFontName', 'remove');
+    set(0, 'DefaultTextFontSize', 'remove');
+    set(0, 'DefaultLegendFontSize', 'remove');
+end
+
+% =======================================================
+% HÀM HỖ TRỢ 1: Đọc file CSV và Scale dữ liệu 
+% =======================================================
+function [t, ox, px, lx, ux, oy, py, ly, uy] = read_and_scale(filepath)
+    try df = readtable(filepath); catch ME, error('Lỗi đọc CSV: %s', ME.message); end
+    SCALE_FACTOR = 0.1;
+    t = df.t;
+    ox = df.orig_x * SCALE_FACTOR;  px = df.pred_x * SCALE_FACTOR;
+    lx = df.lower_x_95ci * SCALE_FACTOR; ux = df.upper_x_95ci * SCALE_FACTOR;
+    oy = df.orig_y * SCALE_FACTOR;  py = df.pred_y * SCALE_FACTOR;
+    ly = df.lower_y_95ci * SCALE_FACTOR; uy = df.upper_y_95ci * SCALE_FACTOR;
+end
+
+% =======================================================
+% HÀM HỖ TRỢ 2A: Giới hạn trục Y cho đồ thị 1D (1 chữ số thập phân)
+% =======================================================
+function apply_1d_y_ticks(axes_list)
+    for i = 1:length(axes_list)
+        ax = axes_list(i);
+        force_ticks_1d(ax);
+        addlistener(ax, 'YLim', 'PostSet', @(src, event) force_ticks_1d(event.AffectedObject));
+    end
+end
+function force_ticks_1d(ax)
+    yl = ax.YLim;
+    if yl(1) < yl(2)
+        ticks = linspace(yl(1), yl(2), 4);
+        ax.YTick = ticks;
+        y_labels = arrayfun(@(v) sprintf('%.1f', v), ticks, 'UniformOutput', false);
+        y_labels = strrep(y_labels, '-0.0', '0.0');
+        ax.YTickLabel = y_labels;
+    end
+end
+
+% =======================================================
+% HÀM HỖ TRỢ 2B: Giới hạn trục X, Y cho đồ thị 2D (2 chữ số thập phân)
+% =======================================================
+function apply_2d_xy_ticks(axes_list)
+    for i = 1:length(axes_list)
+        ax = axes_list(i);
+        force_ticks_2d(ax, 'X');
+        force_ticks_2d(ax, 'Y');
+        addlistener(ax, 'XLim', 'PostSet', @(src, event) force_ticks_2d(event.AffectedObject, 'X'));
+        addlistener(ax, 'YLim', 'PostSet', @(src, event) force_ticks_2d(event.AffectedObject, 'Y'));
+    end
+end
+function force_ticks_2d(ax, axis_name)
+    if strcmpi(axis_name, 'X')
+        lims = ax.XLim;
+        if lims(1) < lims(2)
+            ticks = linspace(lims(1), lims(2), 4);
+            ax.XTick = ticks;
+            x_labels = arrayfun(@(v) sprintf('%.2f', v), ticks, 'UniformOutput', false);
+            x_labels = strrep(x_labels, '-0.00', '0.00');
+            ax.XTickLabel = x_labels;
+        end
+    elseif strcmpi(axis_name, 'Y')
+        lims = ax.YLim;
+        if lims(1) < lims(2)
+            ticks = linspace(lims(1), lims(2), 4);
+            ax.YTick = ticks;
+            y_labels = arrayfun(@(v) sprintf('%.2f', v), ticks, 'UniformOutput', false);
+            y_labels = strrep(y_labels, '-0.00', '0.00');
+            ax.YTickLabel = y_labels;
+        end
+    end
+end
+
+% =======================================================
+% HÀM HỖ TRỢ 3: ÉP SÁT NHÃN TRỤC (XLABEL & YLABEL) VÀO CON SỐ
+% =======================================================
+function nudge_labels(axes_list)
+    for i = 1:length(axes_list)
+        ax = axes_list(i);
+        
+        % Xử lý XLabel
+        hx = ax.XLabel;
+        hx.Units = 'normalized';
+        % [ĐÃ SỬA] Điều chỉnh hệ số lùi trục X để phù hợp với lề dưới mới
+        hx.Position(2) = -0.09; 
+        
+        % Xử lý YLabel
+        hy = ax.YLabel;
+        hy.Units = 'normalized';
+        hy.Position(1) = -0.12; 
+    end
+end

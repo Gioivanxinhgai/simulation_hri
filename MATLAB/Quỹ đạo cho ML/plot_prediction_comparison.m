@@ -1,0 +1,186 @@
+function plot_prediction_comparison(csv_files)
+    % csv_files: Hãy truyền vào một cell array chứa tên 3 file. 
+    % Ví dụ gọi hàm: plot_prediction_comparison({'data1.csv', 'data2.csv', 'data3.csv'})
+    
+    if ischar(csv_files)
+        csv_files = {csv_files}; 
+    end
+    
+    SCALE_FACTOR = 0.1; 
+    
+    % ==========================================
+    % [ĐÃ CẬP NHẬT] THIẾT LẬP THẨM MỸ TỪ CODE MẪU
+    % ==========================================
+    fontsize = 29; 
+    linewidth_obs = 3; 
+    linewidth_pred = 3; 
+    
+    fig_width = 5.95; 
+    fig_height = 5.9;
+    
+    % Bố cục lề: [Lề trái 20%, Lề dưới 16%, Chiều rộng 70%, Chiều cao 75%]
+   fixed_position = [0.24, 0.20, 0.66, 0.71];
+    
+    set(0, 'DefaultAxesFontName', 'Times New Roman');
+    set(0, 'DefaultAxesFontSize', fontsize);
+    set(0, 'DefaultTextFontName', 'Times New Roman');
+    set(0, 'DefaultTextFontSize', fontsize);
+    set(0, 'DefaultLegendFontSize', 14); 
+    
+    ci_color = [0.85 0.85 0.85]; 
+    
+    % --- VÒNG LẶP QUA TỪNG FILE CSV ---
+    for k = 1:length(csv_files)
+        csv_file_path = csv_files{k};
+        
+        try
+            df = readtable(csv_file_path);
+        catch ME
+            error('Không thể đọc tệp CSV: %s\n%s', csv_file_path, ME.message);
+        end
+        
+        t = df.t;
+        obs_x = df.orig_x * SCALE_FACTOR;
+        pred_x = df.pred_x * SCALE_FACTOR;
+        lower_x = df.lower_x_95ci * SCALE_FACTOR;
+        upper_x = df.upper_x_95ci * SCALE_FACTOR;
+        
+        obs_y = df.orig_y * SCALE_FACTOR;
+        pred_y = df.pred_y * SCALE_FACTOR;
+        lower_y = df.lower_y_95ci * SCALE_FACTOR;
+        upper_y = df.upper_y_95ci * SCALE_FACTOR;
+        
+        % =================================================================
+        % KHỐI CẤU HÌNH TRỤC ĐƯỢC TÍNH LẠI THEO TỈ LỆ SCALE = 0.1
+        % =================================================================
+        if k == 1
+            f1_xtick = [0, 2, 4, 6, 8, 10];          f1_x_lbl = {'0', '2', '4', '6', '8', '10'};
+            f1_ytick = [-1.2, -0.9, -0.6, -0.3, 0];  f1_y_lbl = {'-1.2', '-0.9', '-0.6', '-0.3', '0'};
+            
+            f2_xtick = [0, 2, 4, 6, 8, 10];          f2_x_lbl = {'0', '2', '4', '6', '8', '10'};
+            f2_ytick = [0, 0.1, 0.2, 0.3, 0.4, 0.5]; f2_y_lbl = {'0', '0.1', '0.2', '0.3', '0.4', '0.5'};
+            
+            % [SỬA] Nới giới hạn xlim xuống -1.3 để bọc được tick -1.2 và đồng bộ f3 theo f1, f2
+            f3_xlim  = [-1.3, 0.1];                  f3_ylim  = [-0.1, 0.6];
+            f3_xtick = [-1.2, -0.9, -0.6, -0.3, 0];  f3_x_lbl = {'-1.2', '-0.9', '-0.6', '-0.3', '0'};
+            f3_ytick = [0, 0.1, 0.2, 0.3, 0.4, 0.5]; f3_y_lbl = {'0', '0.1', '0.2', '0.3', '0.4', '0.5'};
+            
+        elseif k == 2
+            f1_xtick = [0, 2, 4, 6, 8, 10];          f1_x_lbl = {'0', '2', '4', '6', '8', '10'};
+            f1_ytick = [0, 0.2, 0.4, 0.6, 0.8, 1.0]; f1_y_lbl = {'0', '0.2', '0.4', '0.6', '0.8', '1.0'};
+            
+            f2_xtick = [0, 2, 4, 6, 8, 10];          f2_x_lbl = {'0', '2', '4', '6', '8', '10'};
+            f2_ytick = [0, 0.2, 0.4, 0.6, 0.8, 1.0]; f2_y_lbl = {'0', '0.2', '0.4', '0.6', '0.8', '1.0'};
+            
+            f3_xlim  = [-0.1, 1.1];                  f3_ylim  = [-0.1, 1.1];
+            f3_xtick = [0, 0.2, 0.4, 0.6, 0.8, 1.0]; f3_x_lbl = {'0', '0.2', '0.4', '0.6', '0.8', '1.0'};
+            f3_ytick = [0, 0.2, 0.4, 0.6, 0.8, 1.0]; f3_y_lbl = {'0', '0.2', '0.4', '0.6', '0.8', '1.0'};
+            
+        elseif k == 3
+            f1_xtick = [0, 2, 4, 6, 8, 10];          f1_x_lbl = {'0', '2', '4', '6', '8', '10'};
+            f1_ytick = [0, 0.1, 0.2, 0.3, 0.4, 0.5]; f1_y_lbl = {'0', '0.1', '0.2', '0.3', '0.4', '0.5'};
+            
+            f2_xtick = [0, 2, 4, 6, 8, 10];          f2_x_lbl = {'0', '2', '4', '6', '8', '10'};
+            f2_ytick = [-1.2, -0.9, -0.6, -0.3, 0];  f2_y_lbl = {'-1.2', '-0.9', '-0.6', '-0.3', '0'};
+            
+            % [SỬA] Nới giới hạn ylim xuống -1.3 để bọc được tick -1.2 và đồng bộ f3 theo f1, f2
+            f3_xlim  = [-0.1, 0.6];                  f3_ylim  = [-1.3, 0.1];
+            f3_xtick = [0, 0.1, 0.2, 0.3, 0.4, 0.5]; f3_x_lbl = {'0', '0.1', '0.2', '0.3', '0.4', '0.5'};
+            f3_ytick = [-1.2, -0.9, -0.6, -0.3, 0];  f3_y_lbl = {'-1.2', '-0.9', '-0.6', '-0.3', '0'};
+        end
+        
+        offset = (k-1) * 0.5;
+        
+        % ==========================================
+        % 1. Vẽ Hình 1: Trục X(t)
+        % ==========================================
+        fig1 = figure('Units','inches','Position',[0, 0, fig_width, fig_height], 'Color', 'w'); 
+        ax1 = axes(fig1); hold(ax1, 'on');
+        
+        fill(ax1, [t; flipud(t)], [lower_x; flipud(upper_x)], ...
+             ci_color, 'EdgeColor', 'none', 'DisplayName', '95\% CI');
+             
+        plot(ax1, t, obs_x, '-', 'Color', [0 0 1], 'LineWidth', linewidth_obs); 
+        plot(ax1, t, pred_x, '--', 'Color', [1 0 0], 'LineWidth', linewidth_pred);  
+        
+        hx1 = xlabel(ax1, 'Time (s)', 'Interpreter', 'latex');
+        hx1.Units = 'normalized';
+        hx1.Position(2) = -0.16; % Theo chuẩn nudge_labels
+        
+        hy1 = ylabel(ax1, '$x$ (m)', 'Interpreter', 'latex');
+        hy1.Units = 'normalized';
+        hy1.Position(1) = -0.22; % Theo chuẩn nudge_labels
+        
+        grid(ax1, 'off'); box(ax1, 'on');
+        ax1.XTickLabelRotation = 0
+        set(ax1, 'XTick', f1_xtick, 'XTickLabel', f1_x_lbl, 'YTick', f1_ytick, 'YTickLabel', f1_y_lbl);
+        set(ax1, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+        
+        % ==========================================
+        % 2. Vẽ Hình 2: Trục Y(t)
+        % ==========================================
+        fig2 = figure('Units','inches','Position',[0, 0.5, fig_width, fig_height], 'Color', 'w'); 
+        ax2 = axes(fig2); hold(ax2, 'on');
+        
+        fill(ax2, [t; flipud(t)], [lower_y; flipud(upper_y)], ...
+             ci_color, 'EdgeColor', 'none', 'DisplayName', '95\% CI');
+             
+        plot(ax2, t, obs_y, '-', 'Color', [0 0 1], 'LineWidth', linewidth_obs);
+        plot(ax2, t, pred_y, '--', 'Color', [1 0 0], 'LineWidth', linewidth_pred);  
+        
+        hx2 = xlabel(ax2, 'Time (s)', 'Interpreter', 'latex');
+        hx2.Units = 'normalized';
+        hx2.Position(2) = -0.16; 
+        
+        hy2 = ylabel(ax2, '$y$ (m)', 'Interpreter', 'latex');
+        hy2.Units = 'normalized';
+        hy2.Position(1) = -0.22;
+        
+        grid(ax2, 'off'); box(ax2, 'on');
+        ax2.XTickLabelRotation = 0
+        set(ax2, 'XTick', f2_xtick, 'XTickLabel', f2_x_lbl, 'YTick', f2_ytick, 'YTickLabel', f2_y_lbl);
+        set(ax2, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+        
+        % ==========================================
+        % 3. Vẽ Hình 3: Quỹ đạo 2D Y(x)
+        % ==========================================
+        fig3 = figure('Units','inches','Position',[0.5, 0, fig_width, fig_height], 'Color', 'w'); 
+        ax3 = axes(fig3); hold(ax3, 'on');
+             
+        plot(ax3, obs_x, obs_y, '-', 'Color', [0 0 1], 'LineWidth', linewidth_obs);
+        plot(ax3, pred_x, pred_y, '--', 'Color', [1 0 0], 'LineWidth', linewidth_pred);  
+        
+        hx3 = xlabel(ax3, '$x$ (m)', 'Interpreter', 'latex');
+        hx3.Units = 'normalized';
+        hx3.Position(2) = -0.16; 
+        
+        hy3 = ylabel(ax3, '$y$ (m)', 'Interpreter', 'latex');
+        hy3.Units = 'normalized';
+        hy3.Position(1) = -0.22;
+        
+        xlim(ax3, f3_xlim); ylim(ax3, f3_ylim); 
+        grid(ax3, 'off'); box(ax3, 'on');
+        ax3.XTickLabelRotation = 0;
+        set(ax3, 'XTick', f3_xtick, 'XTickLabel', f3_x_lbl, 'YTick', f3_ytick, 'YTickLabel', f3_y_lbl);
+        set(ax3, 'TickLabelInterpreter', 'latex', 'Units', 'normalized', 'Position', fixed_position);
+        
+        linkaxes([ax1, ax2], 'x');
+        
+        % ==========================================
+        % LỆNH XUẤT RA FILE EPS CHUẨN VECTOR
+        % ==========================================
+        drawnow; 
+        exportgraphics(fig1, sprintf('File%d_Fig1_Xt.eps', k), 'ContentType', 'vector', 'BackgroundColor', 'none');
+        exportgraphics(fig2, sprintf('File%d_Fig2_Yt.eps', k), 'ContentType', 'vector', 'BackgroundColor', 'none');
+        exportgraphics(fig3, sprintf('File%d_Fig3_Yx.eps', k), 'ContentType', 'vector', 'BackgroundColor', 'none');
+        
+        fprintf('Đã xuất thành công 3 file .eps cho tệp thứ %d: %s\n', k, csv_file_path);
+    end
+    
+    % Dọn dẹp config
+    set(0, 'DefaultAxesFontName', 'remove');
+    set(0, 'DefaultAxesFontSize', 'remove');
+    set(0, 'DefaultTextFontName', 'remove');
+    set(0, 'DefaultTextFontSize', 'remove');
+    set(0, 'DefaultLegendFontSize', 'remove');
+end
