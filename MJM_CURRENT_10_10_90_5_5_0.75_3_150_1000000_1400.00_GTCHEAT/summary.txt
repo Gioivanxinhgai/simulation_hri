@@ -4,7 +4,14 @@
 ==========================================================================================
   File                      MAE (m)    Theta (deg)     Assist Index (N)
 ------------------------------------------------------------------------------------------
-  trajectory_048            0.0250     53.42           1.3615         
+  trajectory_017            0.0190     67.55           0.8211         
+  trajectory_029            0.0159     68.74           0.5841         
+  trajectory_034            0.0114     45.55           0.9976         
+  trajectory_036            0.0150     54.19           1.4265         
+  trajectory_037            0.0121     71.68           1.0951         
+  trajectory_038            0.0129     52.98           1.3149         
+  trajectory_046            0.0153     77.08           0.6326         
+  trajectory_048            0.0250     49.44           1.1283         
 
-  Overall Average MAE: 0.0250 m
+  Overall Average MAE: 0.0158 m
 [OK] All simulations completed.

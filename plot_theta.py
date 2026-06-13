@@ -96,7 +96,7 @@ def plot_theta_from_csv(csv_path):
     add_control_mode_background(ax1, list(modes), time_array, zorder=0)
 
     ax1.plot(time_array, theta_smoothed, '--', color='tab:blue', linewidth=2.0,
-            label='Theta (instantaneous)', zorder=2)
+            label='Theta', zorder=2)
     ax1.axhline(PHI_ANGLE, color='tab:orange', linewidth=2.5, label=f'Standard', zorder=2)
     
     ax1.set_ylabel('Theta [deg]')
@@ -119,8 +119,8 @@ def plot_theta_from_csv(csv_path):
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4))
     add_control_mode_background(ax2, list(modes), time_array, zorder=0)
 
-    ax2.plot(time_array, running_mean_theta, '-', color='tab:blue', linewidth=2.0,
-            label=f'Theta (average)', zorder=3)
+    ax2.plot(time_array, running_mean_theta, '--', color='tab:blue', linewidth=2.0,
+            label=f'Theta', zorder=3)
     ax2.axhline(PHI_ANGLE, color='tab:orange', linewidth=2.5, label=f'Standard', zorder=2)
     
     ax2.set_ylabel('Theta [deg]')

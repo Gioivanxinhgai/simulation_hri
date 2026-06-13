@@ -32,7 +32,7 @@ P_HIGH             = 0.8
 P_HYSTERESIS       = 0.05
 
 # Conflict Detection
-PHI_ANGLE          = 60
+PHI_ANGLE          = 90
 FORCE_DEADZONE     = 0.05
 N_CONFLICT_REQUIRED = 5    
 N_CONFIDENCE_REQUIRED = 5
