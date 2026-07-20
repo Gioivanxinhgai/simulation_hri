@@ -2,7 +2,7 @@ function ls()
     % ---------------------------------------------------------
     % 1. THIẾT LẬP STYLE
     % ---------------------------------------------------------
-    fontsize = 16; % Điều chỉnh cỡ chữ cho phù hợp với khung gộp
+    fontsize = 16; 
     linewidth = 1.5;
     markersize = 7;
     
@@ -23,81 +23,71 @@ function ls()
     color_full = [0, 0.4470, 0.7410];   % Xanh dương
     color_kmeans = [1.0, 0.5, 0.0];     % Cam 
     
+    % Kích thước chuẩn cho mỗi hình đơn (ví dụ 5 x 4 inches)
+    fig_width = 5;
+    fig_height = 4;
+
     % ---------------------------------------------------------
-    % 3. KHỞI TẠO CỬA SỔ CHUNG VÀ BỐ CỤC (LAYOUT)
+    % HÌNH 1: LENGTHSCALE X
     % ---------------------------------------------------------
-    % Tạo 1 figure rộng hơn (ví dụ 8 x 4 inches)
-    fig = figure('Units', 'inches', 'Color', 'w', 'Position', [1, 2, 8, 4]);
-    
-    % Sử dụng tiledlayout (1 hàng, 2 cột) để quản lý Legend và Margin dễ hơn subplot
-    tl = tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-    
-    % ---------------------------------------------------------
-    % HÌNH TRÁI (a): LENGTHSCALE X
-    % ---------------------------------------------------------
-    ax1 = nexttile(tl); 
+    fig1 = figure('Units', 'inches', 'Color', 'w', 'Position', [1, 2, fig_width, fig_height]);
+    ax1 = axes(fig1);
     hold(ax1, 'on'); box(ax1, 'on'); grid(ax1, 'on');
+    
     p1 = plot(ax1, t_index, x_full, '-o', 'Color', color_full, 'LineWidth', linewidth, ...
         'MarkerSize', markersize, 'MarkerFaceColor', color_full, 'MarkerEdgeColor', color_full);
     p2 = plot(ax1, t_index, x_kmeans, '-o', 'Color', color_kmeans, 'LineWidth', linewidth, ...
         'MarkerSize', markersize, 'MarkerFaceColor', color_kmeans, 'MarkerEdgeColor', color_kmeans);
     
     ylabel(ax1, 'Length Scale', 'Interpreter', 'latex'); 
-    % Dùng cell array {} để ngắt dòng xlabel, thêm chữ (a) ở dưới
-    xlabel(ax1, {'Input Feature Index', '(a)'}, 'Interpreter', 'latex'); 
+    xlabel(ax1, 'Input Feature Index', 'Interpreter', 'latex'); % Đã xóa '(a)'
     
-    % [MỚI] Khóa giới hạn trục để ôm sát điểm dữ liệu và hiển thị đủ các số trên trục tung
     xlim(ax1, [0 10]);
     ylim(ax1, [2 12.1]); 
     
-    % [MỚI] Chỉ định chính xác các giá trị hiển thị trên trục
     set(ax1, 'XTick', [0, 2, 4, 6, 8, 10]);
     set(ax1, 'YTick', [2, 4, 6, 8, 10, 12]);
     set(ax1, 'TickLabelInterpreter', 'latex');
     
+    
+    % Xuất file Hình 1
+    drawnow;
+    exportgraphics(fig1, 'Lengthscale_X.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    
     % ---------------------------------------------------------
-    % HÌNH PHẢI (b): LENGTHSCALE Y
+    % HÌNH 2: LENGTHSCALE Y
     % ---------------------------------------------------------
-    ax2 = nexttile(tl);
+    fig2 = figure('Units', 'inches', 'Color', 'w', 'Position', [1+fig_width+0.5, 2, fig_width, fig_height]);
+    ax2 = axes(fig2);
     hold(ax2, 'on'); box(ax2, 'on'); grid(ax2, 'on');
+    
     p3 = plot(ax2, t_index, y_full, '-o', 'Color', color_full, 'LineWidth', linewidth, ...
         'MarkerSize', markersize, 'MarkerFaceColor', color_full, 'MarkerEdgeColor', color_full);
     p4 = plot(ax2, t_index, y_kmeans, '-o', 'Color', color_kmeans, 'LineWidth', linewidth, ...
         'MarkerSize', markersize, 'MarkerFaceColor', color_kmeans, 'MarkerEdgeColor', color_kmeans);
     
     ylabel(ax2, 'Length Scale', 'Interpreter', 'latex');
-    xlabel(ax2, {'Input Feature Index', '(b)'}, 'Interpreter', 'latex');
+    xlabel(ax2, 'Input Feature Index', 'Interpreter', 'latex'); % Đã xóa '(b)'
     
-    % [MỚI] Khóa giới hạn trục để ôm sát điểm dữ liệu
     xlim(ax2, [0 10]);
     ylim(ax2, [2 12.1]); 
     
-    % [MỚI] Chỉ định chính xác các giá trị hiển thị trên trục
     set(ax2, 'XTick', [0, 2, 4, 6, 8, 10]);
     set(ax2, 'YTick', [2, 4, 6, 8, 10, 12]);
     set(ax2, 'TickLabelInterpreter', 'latex');
+
     
-    % ---------------------------------------------------------
-    % 4. THIẾT LẬP LEGEND CHUNG (NẰM TRÊN CÙNG)
-    % ---------------------------------------------------------
-    % Tạo legend từ trục 1 nhưng đẩy nó ra quản lý chung bởi tiledlayout
-    lgd = legend(ax1, [p2, p1], {'KMGPR', 'GPR'}, ...
-        'Interpreter', 'latex', 'Orientation', 'horizontal', 'Box', 'on');
-    
-    % Ép vị trí của Legend lên phía Bắc (Trên cùng) của toàn bộ Figure
-    lgd.Layout.Tile = 'North'; 
-    
-    % ---------------------------------------------------------
-    % 5. XUẤT FILE EPS
-    % ---------------------------------------------------------
+    % Xuất file Hình 2
     drawnow;
-    exportgraphics(fig, 'Lengthscale_Combined.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig2, 'Lengthscale_Y.eps', 'ContentType', 'vector', 'BackgroundColor', 'none');
     
-    % Dọn dẹp Workspace
+    % ---------------------------------------------------------
+    % 3. DỌN DẸP WORKSPACE
+    % ---------------------------------------------------------
     set(0, 'DefaultAxesFontName', 'remove');
     set(0, 'DefaultTextFontName', 'remove');
     set(0, 'DefaultAxesFontSize', 'remove');
     set(0, 'DefaultLegendFontSize', 'remove');
     
-    fprintf('Đã xuất thành công file Lengthscale_Combined.eps!\n');
+    fprintf('Đã xuất thành công 2 file: Lengthscale_X.eps và Lengthscale_Y.eps!\n');
 end

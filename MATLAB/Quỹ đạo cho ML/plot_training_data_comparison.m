@@ -26,7 +26,7 @@ function plot_training_data_comparison(csv_full, csv_sampled)
         cfg = configs{i};
         fig = figure('Name', cfg.name, 'Units','inches','Position',[1 + (i-1)*5, 1, 5.1, 4.65], 'Color', 'w'); 
         
-        ax = axes(fig); 
+        ax = axes(fig);
         hold(ax, 'on');
         
         set(ax, 'FontName', 'Times New Roman', 'FontSize', fontsize);

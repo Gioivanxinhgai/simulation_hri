@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lưu Đồ Thuật Toán & Mô Phỏng - 8051 Assembly</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0f1d;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* Dashboard and Simulator UI */
+        .dashboard {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #818cf8;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+            padding-bottom: 6px;
+        }
+
+        /* Control Buttons */
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #334155;
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            border-color: #6366f1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #4338ca;
+        }
+
+        .btn-accent {
+            background: #e11d48;
+            border-color: #f43f5e;
+        }
+
+        .btn-accent:hover:not(:disabled) {
+            background: #be123c;
+        }
+
+        .btn-success {
+            background: #059669;
+            border-color: #10b981;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #047857;
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .slider {
+            flex-grow: 1;
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+
+        /* State display */
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .state-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .state-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+
+        .state-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #38bdf8;
+        }
+
+        .state-value.flag-on {
+            color: #34d399;
+        }
+
+        .state-value.flag-off {
+            color: #f87171;
+        }
+
+        /* LED Display board */
+        .led-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .led-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .led {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+            transition: all 0.1s ease;
+        }
+
+        .led.active {
+            background: #ef4444;
+            border-color: #f87171;
+            box-shadow: 0 0 10px #ef4444, inset 0 1px 2px rgba(255,255,255,0.4);
+        }
+
+        .seven-segment {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: #020617;
+            color: #ef4444;
+            padding: 4px 14px;
+            border-radius: 6px;
+            border: 1px solid #1e293b;
+            text-shadow: 0 0 8px #ef4444;
+            letter-spacing: 2px;
+        }
+
+        /* Console */
+        .console {
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #a7f3d0;
+            height: 100px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .console-entry {
+            line-height: 1.4;
+        }
+
+        .console-time {
+            color: #64748b;
+            margin-right: 6px;
+        }
+
+        /* Flowcharts container */
+        .container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .chart-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+            background: linear-gradient(145deg, #111827, #1e293b);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .chart-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #c4b5fd;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        svg text {
+            font-family: 'JetBrains Mono', 'Inter', monospace;
+            fill: #e2e8f0;
+            font-size: 12px;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+
+        svg text.label {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            fill: #94a3b8;
+        }
+
+        .node-rect {
+            rx: 8;
+            ry: 8;
+            stroke-width: 1.5;
+            transition: all 0.3s ease;
+        }
+
+        .start-end {
+            fill: url(#gradStart);
+            stroke: #6366f1;
+        }
+
+        .process {
+            fill: url(#gradProcess);
+            stroke: #3b82f6;
+        }
+
+        .decision {
+            fill: url(#gradDecision);
+            stroke: #f59e0b;
+            transition: all 0.3s ease;
+        }
+
+        .io {
+            fill: url(#gradIO);
+            stroke: #10b981;
+        }
+
+        .arrow {
+            stroke: #475569;
+            stroke-width: 1.5;
+            fill: none;
+            marker-end: url(#arrowhead);
+            transition: stroke 0.3s ease;
+        }
+
+        .arrow-yes {
+            stroke: #059669;
+        }
+
+        .arrow-no {
+            stroke: #dc2626;
+        }
+
+        svg text.yn {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        svg text.yes-label {
+            fill: #34d399;
+        }
+
+        svg text.no-label {
+            fill: #f87171;
+        }
+
+        /* Flowchart Node Highlights */
+        .node-rect.active-node, polygon.active-node {
+            stroke: #38bdf8 !important;
+            stroke-width: 2.5px !important;
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9));
+        }
+
+        .arrow.active-arrow {
+            stroke: #38bdf8 !important;
+            stroke-width: 2px;
+            stroke-dasharray: 6;
+            animation: dash 1s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+
+        /* Code box and Source highlight */
+        .code-box {
+            margin-top: 30px;
+            background: #0b0f19;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 14px;
+            padding: 20px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        .code-box h3 {
+            font-size: 0.9rem;
+            color: #a78bfa;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .code-box pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .code-line {
+            display: block;
+            padding: 1px 8px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .code-line.active-code-line {
+            background: rgba(56, 189, 248, 0.12);
+            border-left-color: #38bdf8;
+            color: #ffffff;
+        }
+
+        .code-box .kw { color: #c084fc; font-weight: 500; }
+        .code-box .reg { color: #60a5fa; }
+        .code-box .num { color: #34d399; }
+        .code-box .lbl { color: #fbbf24; }
+        .code-box .cmt { color: #64748b; font-style: italic; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .chart-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Lưu Đồ & Trình Mô Phỏng Vi Điều Khiển 8051</h1>
+        <p class="subtitle">Chương trình đếm số lần ngắt ngoài INT0 và hiển thị LED</p>
+    </header>
+
+    <!-- Dashboard/Simulator -->
+    <div class="dashboard">
+        <!-- Controls -->
+        <div class="panel-section">
+            <div class="panel-title">Điều khiển mô phỏng</div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btn-step">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    Từng bước
+                </button>
+                <button class="btn btn-success" id="btn-play">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Tự động
+                </button>
+                <button class="btn" id="btn-pause" disabled>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    Tạm dừng
+                </button>
+                <button class="btn btn-accent" id="btn-interrupt">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Ngắt INT0
+                </button>
+                <button class="btn" id="btn-reset">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Reset
+                </button>
+            </div>
+            <div class="slider-container">
+                <span>Tốc độ:</span>
+                <input type="range" min="100" max="2000" value="600" class="slider" id="speed-slider">
+                <span id="speed-val">600ms</span>
+            </div>
+        </div>
+
+        <!-- CPU Register State -->
+        <div class="panel-section">
+            <div class="panel-title">Trạng thái thanh ghi CPU</div>
+            <div class="state-grid">
+                <div class="state-card">
+                    <span class="state-label">Thanh ghi R5</span>
+                    <span class="state-value" id="reg-r5">0</span>
+                </div>
+                <div class="state-card">
+                    <span class="state-label">Cho phép ngắt EA</span>
+                    <span class="state-value flag-off" id="flag-ea">0</span>
+                </div>
+                <div class="state-card">
+                    <span class="state-label">Ngắt ngoài EX0</span>
+                    <span class="state-value flag-off" id="flag-ex0">0</span>
+                </div>
+                <div class="state-card">
+                    <span class="state-label">Cạnh ngắt IT0</span>
+                    <span class="state-value flag-off" id="flag-it0">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outputs (LED display) -->
+        <div class="panel-section">
+            <div class="panel-title">Hiển thị LED (DISPLAY_LED)</div>
+            <div class="led-board">
+                <div class="seven-segment" id="seg-display">000</div>
+                <div class="led-row" id="led-row">
+                    <div class="led" title="Bit 7"></div>
+                    <div class="led" title="Bit 6"></div>
+                    <div class="led" title="Bit 5"></div>
+                    <div class="led" title="Bit 4"></div>
+                    <div class="led" title="Bit 3"></div>
+                    <div class="led" title="Bit 2"></div>
+                    <div class="led" title="Bit 1"></div>
+                    <div class="led" title="Bit 0"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal log -->
+        <div class="panel-section">
+            <div class="panel-title">Hoạt động hệ thống (Logs)</div>
+            <div class="console" id="console-logs">
+                <div class="console-entry"><span class="console-time">[00:00]</span>Hệ thống đã sẵn sàng. Hãy bấm "Từng bước" hoặc "Tự động".</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flowcharts -->
+    <div class="container">
+        <!-- MAIN PROGRAM -->
+        <div class="chart-section" id="section-main">
+            <div class="chart-title">🔷 Chương Trình Chính (MAIN)</div>
+            <svg width="280" height="520" viewBox="0 0 280 520">
+                <defs>
+                    <linearGradient id="gradStart" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#4338ca" />
+                        <stop offset="100%" stop-color="#6366f1" />
+                    </linearGradient>
+                    <linearGradient id="gradProcess" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#1e3a5f" />
+                        <stop offset="100%" stop-color="#1e40af" />
+                    </linearGradient>
+                    <linearGradient id="gradDecision" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#78350f" />
+                        <stop offset="100%" stop-color="#b45309" />
+                    </linearGradient>
+                    <linearGradient id="gradIO" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#064e3b" />
+                        <stop offset="100%" stop-color="#047857" />
+                    </linearGradient>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+                    </marker>
+                </defs>
+
+                <!-- START -->
+                <rect id="node-m-start" x="65" y="20" width="150" height="44" class="node-rect start-end" />
+                <text x="140" y="42">BẮT ĐẦU</text>
+
+                <!-- Arrow -->
+                <line id="arrow-m-start-to-r5" x1="140" y1="64" x2="140" y2="100" class="arrow" />
+
+                <!-- R5 = 0 -->
+                <rect id="node-m-r5" x="55" y="100" width="170" height="44" class="node-rect process" />
+                <text x="140" y="122">R5 ← 0</text>
+
+                <!-- Arrow -->
+                <line id="arrow-m-r5-to-config" x1="140" y1="144" x2="140" y2="185" class="arrow" />
+
+                <!-- Config Interrupts -->
+                <rect id="node-m-config" x="30" y="185" width="220" height="60" class="node-rect process" />
+                <text x="140" y="205" font-size="12">Cấu hình ngắt:</text>
+                <text x="140" y="225" font-size="11.5">IT0=1, EX0=1, EA=1</text>
+
+                <!-- Arrow -->
+                <line id="arrow-m-config-to-loop" x1="140" y1="245" x2="140" y2="290" class="arrow" />
+
+                <!-- DISPLAY_LED -->
+                <rect id="node-m-loop" x="45" y="290" width="190" height="44" class="node-rect io" />
+                <text x="140" y="312">Gọi DISPLAY_LED</text>
+
+                <!-- Loop arrow back -->
+                <line id="arrow-m-loop-back" x1="140" y1="334" x2="140" y2="370" class="arrow" style="marker-end:none" />
+                <path id="path-m-loop-back" d="M140,370 L250,370 L250,312 L237,312" class="arrow" />
+                <text x="170" y="390" class="label" font-size="10" fill="#94a3b8">Lặp vô hạn</text>
+            </svg>
+        </div>
+
+        <!-- ISR -->
+        <div class="chart-section" id="section-isr">
+            <div class="chart-title">⚡ Ngắt Ngoài INT0 (ISR_INT0)</div>
+            <svg width="300" height="520" viewBox="0 0 300 520">
+                <!-- Interrupt Start -->
+                <rect id="node-i-start" x="75" y="20" width="150" height="44" class="node-rect start-end" />
+                <text x="150" y="42">Ngắt INT0</text>
+
+                <!-- Arrow -->
+                <line id="arrow-i-start-to-inc" x1="150" y1="64" x2="150" y2="110" class="arrow" />
+
+                <!-- INC R5 -->
+                <rect id="node-i-inc" x="60" y="110" width="180" height="44" class="node-rect process" />
+                <text x="150" y="132">R5 ← R5 + 1</text>
+
+                <!-- Arrow -->
+                <line id="arrow-i-inc-to-check" x1="150" y1="154" x2="150" y2="210" class="arrow" />
+
+                <!-- Decision: R5 == 100? -->
+                <polygon id="node-i-check" points="150,195 255,255 150,315 45,255" class="decision" style="stroke-width:1.5" />
+                <text x="150" y="250" font-size="13">R5 = 100?</text>
+
+                <!-- YES arrow down -->
+                <line id="arrow-i-check-to-reset" x1="150" y1="315" x2="150" y2="370" class="arrow arrow-yes" />
+                <text x="168" y="345" class="yn yes-label">Đúng</text>
+
+                <!-- R5 = 0 -->
+                <rect id="node-i-reset" x="60" y="370" width="180" height="44" class="node-rect process" />
+                <text x="150" y="392">R5 ← 0</text>
+
+                <!-- Arrow to RETI -->
+                <line id="arrow-i-reset-to-reti" x1="150" y1="414" x2="150" y2="450" class="arrow" />
+
+                <!-- RETI -->
+                <rect id="node-i-reti" x="75" y="450" width="150" height="44" class="node-rect start-end" />
+                <text x="150" y="472">RETI (Trở về)</text>
+
+                <!-- NO arrow right then down to RETI -->
+                <line id="arrow-i-check-to-exit" x1="255" y1="255" x2="275" y2="255" class="arrow arrow-no" style="marker-end:none" />
+                <path id="path-i-check-to-exit" d="M275,255 L275,472 L227,472" class="arrow arrow-no" />
+                <text x="262" y="240" class="yn no-label">Sai</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- SOURCE CODE -->
+    <div class="code-box">
+        <h3>📄 Mã nguồn Assembly 8051</h3>
+        <pre><span class="code-line" id="code-entry">    <span class="kw">ORG</span> <span class="num">0000H</span>
+    <span class="kw">LJMP</span> <span class="lbl">MAIN</span></span>
+<span class="code-line" id="code-isr-vector">    <span class="kw">ORG</span> <span class="num">0003H</span>
+    <span class="kw">LJMP</span> <span class="lbl">ISR_INT0</span></span>
+<span class="code-line" id="code-main-lbl"><span class="lbl">MAIN:</span></span>
+<span class="code-line" id="code-r5">    <span class="kw">MOV</span> <span class="reg">R5</span>, <span class="num">#0</span>             <span class="cmt">; Khởi tạo bộ đếm</span></span>
+<span class="code-line" id="code-config">    <span class="kw">SETB</span> <span class="reg">IT0</span>              <span class="cmt">; Ngắt cạnh xuống</span>
+    <span class="kw">SETB</span> <span class="reg">EX0</span>              <span class="cmt">; Cho phép ngắt INT0</span>
+    <span class="kw">SETB</span> <span class="reg">EA</span>               <span class="cmt">; Cho phép ngắt toàn cục</span></span>
+<span class="code-line" id="code-loop"><span class="lbl">Loop:</span>
+    <span class="kw">LCALL</span> <span class="lbl">DISPLAY_LED</span>     <span class="cmt">; Hiển thị LED</span>
+    <span class="kw">SJMP</span> <span class="lbl">Loop</span>             <span class="cmt">; Lặp vô hạn</span></span>
+<span class="code-line" id="code-isr-lbl"><span class="lbl">ISR_INT0:</span></span>
+<span class="code-line" id="code-isr-inc">    <span class="kw">INC</span> <span class="reg">R5</span>               <span class="cmt">; Tăng bộ đếm</span></span>
+<span class="code-line" id="code-isr-check">    <span class="kw">CJNE</span> <span class="reg">R5</span>, <span class="num">#100</span>, <span class="lbl">Exit</span> <span class="cmt">; Nếu R5 ≠ 100, thoát</span></span>
+<span class="code-line" id="code-isr-reset">    <span class="kw">MOV</span> <span class="reg">R5</span>, <span class="num">#0</span>           <span class="cmt">; Reset bộ đếm</span></span>
+<span class="code-line" id="code-isr-exit"><span class="lbl">Exit:</span>
+    <span class="kw">RETI</span>                  <span class="cmt">; Trở về từ ngắt</span></span></pre>
+    </div>
+
+    <!-- Simulator logic -->
+    <script>
+        // State variables
+        let r5 = 0;
+        let ea = 0;
+        let ex0 = 0;
+        let it0 = 0;
+        
+        let currentState = 'RESET'; // RESET, M_START, M_R5, M_CONFIG, M_LOOP, I_START, I_INC, I_CHECK, I_RESET, I_RETI
+        let interruptPending = false;
+        let isPlaying = false;
+        let timer = null;
+        let stepSpeed = 600; // ms
+        let logCounter = 1;
+
+        // UI elements
+        const regR5El = document.getElementById('reg-r5');
+        const flagEaEl = document.getElementById('flag-ea');
+        const flagEx0El = document.getElementById('flag-ex0');
+        const flagIt0El = document.getElementById('flag-it0');
+        const segDisplayEl = document.getElementById('seg-display');
+        const ledRowEl = document.getElementById('led-row');
+        const consoleLogsEl = document.getElementById('console-logs');
+
+        const btnStep = document.getElementById('btn-step');
+        const btnPlay = document.getElementById('btn-play');
+        const btnPause = document.getElementById('btn-pause');
+        const btnInterrupt = document.getElementById('btn-interrupt');
+        const btnReset = document.getElementById('btn-reset');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValEl = document.getElementById('speed-val');
+
+        // Map states to UI nodes, arrows and code highlights
+        const stateMap = {
+            'RESET': {
+                nodes: [],
+                arrows: [],
+                code: []
+            },
+            'M_START': {
+                nodes: ['node-m-start'],
+                arrows: ['arrow-m-start-to-r5'],
+                code: ['code-entry', 'code-main-lbl']
+            },
+            'M_R5': {
+                nodes: ['node-m-r5'],
+                arrows: ['arrow-m-r5-to-config'],
+                code: ['code-r5']
+            },
+            'M_CONFIG': {
+                nodes: ['node-m-config'],
+                arrows: ['arrow-m-config-to-loop'],
+                code: ['code-config']
+            },
+            'M_LOOP': {
+                nodes: ['node-m-loop'],
+                arrows: ['arrow-m-loop-back', 'path-m-loop-back'],
+                code: ['code-loop']
+            },
+            'I_START': {
+                nodes: ['node-i-start'],
+                arrows: ['arrow-i-start-to-inc'],
+                code: ['code-isr-vector', 'code-isr-lbl']
+            },
+            'I_INC': {
+                nodes: ['node-i-inc'],
+                arrows: ['arrow-i-inc-to-check'],
+                code: ['code-isr-inc']
+            },
+            'I_CHECK': {
+                nodes: ['node-i-check'],
+                arrows: [], // Arrow determined in step execution
+                code: ['code-isr-check']
+            },
+            'I_RESET': {
+                nodes: ['node-i-reset'],
+                arrows: ['arrow-i-reset-to-reti'],
+                code: ['code-isr-reset']
+            },
+            'I_RETI': {
+                nodes: ['node-i-reti'],
+                arrows: [],
+                code: ['code-isr-exit']
+            }
+        };
+
+        // Utility to write to console log
+        function addLog(msg) {
+            const timeStr = String(logCounter++).padStart(2, '0');
+            const entry = document.createElement('div');
+            entry.className = 'console-entry';
+            entry.innerHTML = `<span class="console-time">[${timeStr}]</span>${msg}`;
+            consoleLogsEl.appendChild(entry);
+            consoleLogsEl.scrollTop = consoleLogsEl.scrollHeight;
+        }
+
+        // Update UI displays
+        function updateUI() {
+            // Register & flags
+            regR5El.textContent = r5;
+            
+            flagEaEl.textContent = ea;
+            flagEaEl.className = `state-value ${ea ? 'flag-on' : 'flag-off'}`;
+            
+            flagEx0El.textContent = ex0;
+            flagEx0El.className = `state-value ${ex0 ? 'flag-on' : 'flag-off'}`;
+            
+            flagIt0El.textContent = it0;
+            flagIt0El.className = `state-value ${it0 ? 'flag-on' : 'flag-off'}`;
+
+            // Segment Display
+            segDisplayEl.textContent = String(r5).padStart(3, '0');
+
+            // Binary LEDs
+            const leds = ledRowEl.querySelectorAll('.led');
+            for (let i = 0; i < 8; i++) {
+                // R5 binary representation (Bit 7 to Bit 0)
+                const bitVal = (r5 >> (7 - i)) & 1;
+                if (bitVal) {
+                    leds[i].classList.add('active');
+                } else {
+                    leds[i].classList.remove('active');
+                }
+            }
+
+            // Remove all active highlights
+            document.querySelectorAll('.active-node').forEach(el => el.classList.remove('active-node'));
+            document.querySelectorAll('.active-arrow').forEach(el => el.classList.remove('active-arrow'));
+            document.querySelectorAll('.active-code-line').forEach(el => el.classList.remove('active-code-line'));
+
+            // Set new highlights
+            const currentHighlight = stateMap[currentState];
+            if (currentHighlight) {
+                currentHighlight.nodes.forEach(id => {
+                    const nodeEl = document.getElementById(id);
+                    if (nodeEl) nodeEl.classList.add('active-node');
+                });
+                currentHighlight.arrows.forEach(id => {
+                    const arrowEl = document.getElementById(id);
+                    if (arrowEl) arrowEl.classList.add('active-arrow');
+                });
+                currentHighlight.code.forEach(id => {
+                    const codeEl = document.getElementById(id);
+                    if (codeEl) codeEl.classList.add('active-code-line');
+                });
+            }
+
+            // Highlight specific arrows for branching decisions
+            if (currentState === 'I_CHECK') {
+                // We show both potential arrows or the chosen one based on R5
+                const arrowYes = document.getElementById('arrow-i-check-to-reset');
+                const arrowNo = document.getElementById('arrow-i-check-to-exit');
+                const pathNo = document.getElementById('path-i-check-to-exit');
+                if (r5 === 100) {
+                    arrowYes.classList.add('active-arrow');
+                } else {
+                    arrowNo.classList.add('active-arrow');
+                    pathNo.classList.add('active-arrow');
+                }
+            }
+        }
+
+        // Perform one step in the simulator
+        function stepSimulator() {
+            // Check for interrupts if allowed
+            if (interruptPending && ea && ex0 && (currentState === 'M_LOOP' || currentState === 'M_CONFIG')) {
+                addLog("⚡ [NGẮT] Phát hiện tín hiệu ngắt ngoài INT0. Nhảy tới ISR_INT0 (0003H)");
+                interruptPending = false;
+                currentState = 'I_START';
+                updateUI();
+                return;
+            }
+
+            switch (currentState) {
+                case 'RESET':
+                    currentState = 'M_START';
+                    addLog("▶ Khởi động chương trình từ vector ORG 0000H.");
+                    break;
+                case 'M_START':
+                    currentState = 'M_R5';
+                    addLog("Chạy lệnh: <code>MOV R5, #0</code>");
+                    break;
+                case 'M_R5':
+                    r5 = 0;
+                    currentState = 'M_CONFIG';
+                    addLog("Thanh ghi <b>R5</b> được gán giá trị <b>0</b>.");
+                    break;
+                case 'M_CONFIG':
+                    it0 = 1;
+                    ex0 = 1;
+                    ea = 1;
+                    currentState = 'M_LOOP';
+                    addLog("Cấu hình ngắt hoàn tất: <b>IT0 = 1</b> (cạnh), <b>EX0 = 1</b> (cho phép ngắt), <b>EA = 1</b> (cho phép toàn cục).");
+                    break;
+                case 'M_LOOP':
+                    addLog("Chạy lặp <code>DISPLAY_LED</code>: Cập nhật giá trị hiển thị LED: <b>" + r5 + "</b>");
+                    // Remains in loop until interrupt occurs
+                    break;
+                case 'I_START':
+                    currentState = 'I_INC';
+                    addLog("Bắt đầu chương trình phục vụ ngắt <code>ISR_INT0</code>.");
+                    break;
+                case 'I_INC':
+                    r5++;
+                    // Cap R5 at 255 if it keeps incrementing, but our logic reset is at 100
+                    if (r5 > 255) r5 = 0;
+                    currentState = 'I_CHECK';
+                    addLog("Tăng bộ đếm: <code>INC R5</code>. Giá trị mới của <b>R5 = " + r5 + "</b>");
+                    break;
+                case 'I_CHECK':
+                    addLog("Kiểm tra điều kiện: <code>CJNE R5, #100, Exit</code>");
+                    if (r5 === 100) {
+                        currentState = 'I_RESET';
+                        addLog("ĐÚNG: R5 đạt giá trị 100. Chuẩn bị reset R5 về 0.");
+                    } else {
+                        currentState = 'I_RETI';
+                        addLog(`SAI: R5 = ${r5} (chưa đạt 100). Bỏ qua nhánh reset, nhảy tới Exit.`);
+                    }
+                    break;
+                case 'I_RESET':
+                    r5 = 0;
+                    currentState = 'I_RETI';
+                    addLog("Thực hiện reset: <code>MOV R5, #0</code>. Thanh ghi R5 được đặt về 0.");
+                    break;
+                case 'I_RETI':
+                    currentState = 'M_LOOP';
+                    addLog("Chạy lệnh: <code>RETI</code>. Trở lại chương trình chính (MAIN) tại vòng lặp.");
+                    break;
+            }
+
+            updateUI();
+        }
+
+        function playSimulator() {
+            isPlaying = true;
+            btnPlay.disabled = true;
+            btnStep.disabled = true;
+            btnPause.disabled = false;
+            
+            timer = setInterval(() => {
+                stepSimulator();
+            }, stepSpeed);
+            
+            addLog("⚡ Chế độ chạy Tự động kích hoạt.");
+        }
+
+        function pauseSimulator() {
+            isPlaying = false;
+            btnPlay.disabled = false;
+            btnStep.disabled = false;
+            btnPause.disabled = true;
+            
+            clearInterval(timer);
+            addLog("⏸ Mô phỏng tạm dừng.");
+        }
+
+        function resetSimulator() {
+            isPlaying = false;
+            clearInterval(timer);
+            
+            r5 = 0;
+            ea = 0;
+            ex0 = 0;
+            it0 = 0;
+            currentState = 'RESET';
+            interruptPending = false;
+            logCounter = 1;
+
+            btnPlay.disabled = false;
+            btnStep.disabled = false;
+            btnPause.disabled = true;
+            
+            consoleLogsEl.innerHTML = '';
+            addLog("🔄 Hệ thống được reset về trạng thái ban đầu.");
+            updateUI();
+        }
+
+        // Event listeners
+        btnStep.addEventListener('click', stepSimulator);
+        
+        btnPlay.addEventListener('click', playSimulator);
+        
+        btnPause.addEventListener('click', pauseSimulator);
+        
+        btnInterrupt.addEventListener('click', () => {
+            interruptPending = true;
+            addLog("⚡ [NGOẠI VI] Kích hoạt sự kiện ngắt ngoài tại chân INT0 (P3.2).");
+            if (!isPlaying) {
+                // If not running, highlight the interrupt request visual instantly
+                addLog("Bấm 'Từng bước' hoặc 'Tự động' để CPU phản hồi tín hiệu ngắt này.");
+            }
+        });
+
+        btnReset.addEventListener('click', resetSimulator);
+
+        speedSlider.addEventListener('input', (e) => {
+            stepSpeed = parseInt(e.target.value);
+            speedValEl.textContent = stepSpeed + 'ms';
+            if (isPlaying) {
+                // Restart timer with new speed
+                clearInterval(timer);
+                timer = setInterval(stepSimulator, stepSpeed);
+            }
+        });
+
+        // Initialize display
+        updateUI();
+    </script>
+</body>
+
+</html>

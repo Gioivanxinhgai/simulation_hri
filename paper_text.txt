@@ -1,0 +1,732 @@
+A K-Means–based Gaussian Process Regression
+Model for Human Motion Prediction in
+Human–Robot Collaboration
+Ba Hung Nguyen
+School of Electrical and
+Electronics Engineering
+Hanoi University of
+Science and Technology
+Hung.NB232107@sis.hust.edu.vn
+Anh Duc Nguyen
+School of Electrical and
+Electronics Engineering
+Hanoi University of
+Science and Technology
+Duc.na232007@sis.hust.edu.vn
+Van Duy Tran
+School of Electrical and
+Electronics Engineering
+Hanoi University of
+Science and Technology
+duy.tv222256@sis.hust.edu.vn
+Viet Thang Dang
+School of Electrical and
+Electronics Engineering
+Hanoi University of
+Science and Technology
+thang.dv252354m@sis.hust.edu.vn
+Tung Lam Nguyen
+School of Electrical and
+Electronics Engineering
+Hanoi University of
+Science and Technology
+lam.nguyentung@hust.edu.vn
+Van Trong Dang
+School of Electrical and
+Electronics Engineering
+Hanoi University of
+Science and Technology
+trong.dv211234m@sis.hust.edu.vn
+Abstract—Human motion prediction plays a critical role in
+ensuring safe and efficient coordination in human–robot collabo-
+ration within manufacturing and service environments. However,
+human movements exhibit nonlinear and stochastic characteristics,
+making accurate prediction and reliability assessment challenging.
+To tackle these issues, the present study introduces a model that
+combines Gaussian process regression (GPR) with Elbow method-
+based K-Means, allowing both motion prediction and uncertainty
+quantification through predictive variance while significantly
+reducing computational complexity. Results from two-dimensional
+motion prediction demonstrate that the proposed model achieves
+reliable prediction accuracy compared with standard GPR while
+significantly reducing the computational load, thereby decreasing
+inference time by approximately a factor of eight. Furthermore,
+the model effectively captures predictive uncertainty, reflecting
+performance degradation during abrupt changes in human motion.
+Index Terms—Gaussian processes, human motion prediction,
+human–robot collaboration, k-means clustering, uncertainty
+quantification
+I. INTRODUCTION
+Human-robot collaboration (HRC) has become increasingly
+prevalent in modern manufacturing and service industries,
+where humans and robots cooperate in the same workspace to
+accomplish shared tasks [1]–[3]. In such collaborative settings,
+humans contribute cognitive strengths, decision-making, and
+the flexibility to react to unexpected problems in unstructured
+environments, whereas robots offer high precision, compu-
+tational capability, and consistency. The primary objective
+of HRC systems is to achieve seamless cooperation while
+ensuring safety, ergonomics, and efficiency [4], [5]. A key
+challenge in achieving this objective is that robots must
+proactively anticipate human intentions, rather than merely
+Co-carrying
+Physical Human-Robot Collaboration Tasks
+Co-assenbling
+How can robots understand and proactively assist humans while assessing the uncertainty of the prediction?
+Handover 
+Uncertainty
+Human Intended Motion
+Prediction Motion
+Interaction
+Co-carrying
+Human-Robot Collaboration Tasks
+Co-assembling
+How Can Robots Predict Human Motion While Assessing the Uncertainty of the Predictions?
+Handover 
+Uncertainty
+Human Intention
+Predicted Motion
+Interaction
+Fig. 1.
+Illustration of common human-robot collaboration scenarios (co-
+carrying, handover, and co-assembling) and the corresponding motion predic-
+tion pipeline, where the robot infers human intention from observed motion
+while quantifying predictive uncertainty.
+reacting passively to observed motions [6]. Without such
+capability, robots cannot plan appropriate responses in time,
+leading to an increased risk of conflicts, reduced task efficiency,
+and higher human workload. Consequently, as depicted in Fig.
+1, accurate human motion prediction is essential for enabling
+anticipatory motion planning and minimizing collision risks
+in physical human–robot interaction (pHRI). However, since
+human motion is inherently nonlinear and stochastic, relying
+solely on predictions without uncertainty estimates may produce
+overconfident robot behaviors that are unsafe when unexpected
+motion changes occur. Therefore, assessing the uncertainty of
+the predictions enables the robot to make informed decisions
+and adopt conservative behaviors when confidence is low.
+Driven by this challenge, the prediction of human motion
+has received significant attention in the robotics research
+community [7]–[9], with existing approaches broadly cat-
+egorized into model-based and data-driven methodologies.
+Model-based methods formulate explicit mathematical or
+physical models to describe and predict human behaviors.
+For example, the approach in [10] employed an Unscented
+Kalman filter integrated with an interacting multiple model
+estimator to predict future human poses based on purely
+kinematic double integrator models. Taking a different model-
+based approach, [11] combined a biomechanical model and
+inverse reinforcement learning to generate explainable motion
+predictions, integrating them into a model predictive control
+scheme for safe handovers. However, human movements are
+inherently nonlinear, stochastic, and highly individual-specific
+in the event of significant trajectory perturbations or sudden
+changes in motion patterns. To overcome this limitation,
+data-driven methods have become increasingly prevalent in
+recent years [12]–[14]. These approaches learn motion patterns
+directly from observed data through statistical modeling and
+machine learning techniques. One of the most widely adopted
+architectures is recurrent neural networks (RNNs), owing to
+their ability to capture temporal dependencies in sequential
+motion data. Yet, standard RNNs suffer from the vanishing
+gradient problem, limiting their ability to capture long-term
+dependencies. Advanced variants such as Long Short-Term
+Memory (LSTM) networks and Gated Recurrent Units (GRUs)
+overcome this limitation, enabling more effective modeling
+of the nonlinear and stochastic dynamics of human motion.
+For instance, [13] used a deep LSTM to predict motion in
+co-carrying tasks, yet prediction errors in practice remain
+unavoidable due to noise and motion variability. Building
+on RNN foundations, [14] proposed a residual sequence-to-
+sequence architecture with a single GRU, effectively resolving
+first-frame discontinuities while reducing computational cost
+compared to multi-layer LSTM approaches. Despite these
+advances, these techniques typically require large training
+datasets and lack uncertainty quantification mechanisms, which
+increases risks in pHRI tasks. To mitigate these limitations,
+Gaussian process regression (GPR) has been proposed to offer
+a non-parametric Bayesian framework that not only learns
+effectively from moderate-sized datasets [8], but also provides
+uncertainty estimates via its predictive variance [15]–[18]. In
+pHRI, reliable uncertainty quantification is crucial for enabling
+the robotic system to make informed decisions and adopt
+conservative behaviors when prediction confidence is low,
+thereby preventing collisions. However, standard GPR suffers
+from O(N 3) time complexity due to the required inversion
+of the N × N covariance matrix, where N represents the
+number of training samples [19]. This computational burden
+becomes infeasible for real-time applications as the training
+data expands.
+Motivated by the aforementioned analysis, this paper pro-
+poses a K-Means-based GPR model (KMGPR), in which the
+Elbow method-based K-Means serves as a Subset of Data
+(SoD) strategy to select representative samples, significantly
+reducing the computational burden in HRC applications. The
+main contributions of this paper are summarized as follows.
+First, KMGPR achieves prediction accuracy nearly equivalent to
+standard GPR while reducing inference time by approximately
+eight times using only 20% of the original training samples.
+Second, two representative HRC scenarios are considered to
+demonstrate the KMGPR’s uncertainty quantification capabil-
+ity and prediction performance compared to standard GPR.
+Furthermore, a theoretical analysis is provided to explain the
+behavioral differences between KMGPR and standard GPR
+under abrupt motion changes.
+The remainder of this paper is organized as follows. The
+problem of human motion prediction is formulated as a
+regression task in Section II. Section III presents the GPR
+framework integrated with the Elbow method-based K-Means
+for computational efficiency. Section IV provides validation
+setup and performance evaluation across two specific scenarios.
+Finally, the conclusions and future works are presented in
+Section V.
+II. PROBLEM FORMULATION
+The primary objective of this work is to predict human hand
+motion p⊤
+t ∈Rd. At each time step t, given an observation
+window Xt = [p⊤
+t−h+1, . . . , p⊤
+t ] ∈Rdh encompassing h
+historical time steps, the goal is to predict future motions.
+However, since human motion is inherently stochastic and
+nonlinear, predictions carry unavoidable uncertainty, and long-
+horizon forecasting is prone to error accumulation [15], [18].
+Furthermore, to ensure safety and efficiency in pHRI, accurate
+motion prediction must be coupled with real-time uncertainty
+quantification at a reasonable computational cost. Consequently,
+this work focuses on short-term prediction, where the predictive
+output is defined as Yt = p⊤
+t+1 ∈Rd.
+III. METHOD
+A. Architecture Overview
+To formulate the multi-dimensional prediction from a histor-
+ical window to the future motion, the problem is decomposed
+..
+.
+···
+Dim 1
+Dim d
+Dim 2
+..
+.
+GP 1
+GP 2
+GP d
+Input window
+Predictive 
+Distribution
+⋮
+⋮
+⋮
+⋮
+⋮
+⋮
+⋱
+···
+Time
+t -h + 1
+t -h + 2
+t
+t +  1
+···
+𝒩
+GP 
+models
+..
+.
+..
+.
+..
+.
+..
+.
+..
+.
+..
+.
+..
+.
+𝒩
+𝒩
+···
+Fig. 2. Multi-dimensional GP architecture. The input observation window
+encompasses h past time steps and is decomposed into d separate dimensions.
+Each dimension is then modeled by an independent GP. Finally, each GP
+processes the h-step window to predict the future state, producing its own
+Gaussian predictive distribution.
+across dimensions, where each dimension is modeled by an
+independent GP as shown in Fig. 2.
+Formally, for a given dimension, let xi ∈Rh represent the
+historical observations, and yi is the corresponding future state.
+The relationship between the past observations and the future
+state is modeled as a latent function f : Rh →R with additive
+Gaussian noise:
+yi = f(xi) + ϵ,
+(1)
+where ϵ ∼N(0, σ2
+n) and σ2
+n denotes the noise variance.
+B. Gaussian Process Regression
+GP is used to define a distribution over functions, where
+any finite collection of function values has a joint Gaussian
+distribution [17]. A GP is fully specified by its mean function
+and covariance function:
+f(x) ∼GP(m(x), k(x, x′)),
+(2)
+in which m(x) and k(x, x′) are the mean function and
+the covariance function, respectively. The mean function is
+normally set to zero, and a widely used covariance function
+is the squared exponential (SE) with automatic relevance
+determination (ARD) [17], defined as
+k(x, x′) = σ2
+f exp
+
+−1
+2(x −x′)⊤L−1(x −x′)
+
+,
+(3)
+where σ2
+f is the signal variance, and L = diag[l2
+1, l2
+2, . . . , l2
+h]
+comprises the length scales across the h input features.
+Given a training dataset D = {(xi, yi)}N
+i=1 containing N
+training samples for any given dimension, and the noisy obser-
+vation model in (1), the set of hyperparameters θ = {σ2
+f, L, σ2
+n}
+is optimized by maximizing the log-marginal likelihood, given
+by
+log p(y|X, θ) = −1
+2y⊤ K + σ2
+nI
+−1 y −1
+2 log
+K + σ2
+nI
+
+−N
+2 log 2π,
+(4)
+where y = [y1, y2, . . . , yN]⊤is the vector of training outputs,
+and
+K =
+
+
+k(x1, x1)
+k(x1, x2)
+· · ·
+k(x1, xN)
+k(x2, x1)
+k(x2, x2)
+· · ·
+k(x2, xN)
+...
+...
+...
+...
+k(xN, x1)
+k(xN, x2)
+· · ·
+k(xN, xN)
+
+
+(5)
+is the N × N covariance matrix of the training data.
+For a new test input x∗, the predictive distribution of the
+future state y∗is given by p(y∗|D, x∗) = N(µy∗, Σy∗), with
+its mean
+µy∗= K∗(K + σ2
+nI)−1y,
+(6)
+and variance
+Σy∗= k(x∗, x∗) −K∗(K + σ2
+nI)−1K⊤
+∗,
+(7)
+where k(x∗, x∗) denotes the covariance of the test input with
+itself, and K∗is the covariance vector between the test input
+x∗and the training inputs:
+K∗=
+k(x∗, x1)
+k(x∗, x2)
+· · ·
+k(x∗, xN)
+.
+(8)
+As depicted in Fig. 2, the test input X∗∈Rdh is decomposed
+into d separate dimensions, each independently processed by
+a GP to yield a Gaussian predictive distribution. Since the
+predicted motion Y∗∈Rd comprises d independent Gaus-
+sian components, its joint distribution follows a multivariate
+Gaussian N(µY∗, ΣY∗) with the mean vector
+µY∗= [µy1∗, µy2∗, . . . , µyd∗]⊤,
+(9)
+and the covariance matrix
+ΣY∗= diag[Σy1∗, Σy2∗, . . . , Σyd∗].
+(10)
+While this formulation provides a principled probabilistic
+framework for multi-dimensional prediction, its real-time
+deployment is limited by computational cost. As seen in (6)
+and (7), standard GPR suffers from a cubic time complexity of
+O(N 3) due to the required inversion of the N × N covariance
+matrix K + σ2
+nI. This computational burden severely limits
+the scalability of the GP, making it unaffordable for real-time
+motion prediction in continuous HRC tasks. To address this
+limitation, the SoD approximation serves as one of the most
+fundamental global approximation strategies to scale up the
+standard GP [19]. By constructing the model on a subset of
+size M (M ≪N), the SoD method effectively reduces the
+time complexity to O(M 3). However, the effectiveness of the
+SoD approach depends critically on the selection method and
+the subset size, which must be carefully chosen to preserve the
+characteristics of the training dataset. To fulfill this requirement,
+this work proposes a K-Means-based subset selection strategy.
+C. Elbow method-based K-Means
+In this study, the Elbow method-based K-Means is em-
+ployed to select a representative SoD from the full training
+dataset. Given a predefined number of clusters K, the algo-
+rithm partitions the input set {X1, . . . , XN} into K clusters
+{S1, . . . , SK} through the following iterative steps:
+1) Initialization: Select K data points randomly from the
+training set to serve as the initial centroids.
+2) Cluster Assignment: For each data point Xi, calculate
+the Euclidean distance to each centroid and assign it to
+the nearest cluster.
+3) Centroid Update: Compute the mean of all data points
+assigned to each cluster Sk to update its centroid Ck.
+4) Iteration: Repeat steps (2) and (3) until the cluster
+assignments no longer change.
+A standard measure of partition quality is the sum of squared
+errors (SSE), given by
+SSE =
+K
+X
+k=1
+X
+Xi∈Sk
+∥Xi −Ck∥2.
+(11)
+This measure is then used by the Elbow method to determine
+the optimal number of clusters, denoted M, by evaluating
+the SSE in (11) across a range of K values [20]. On the
+resulting curve, as K increases, the SSE initially declines
+rapidly. However, beyond a certain point, the SSE continues
+to decline but at a significantly slower rate, forming a distinct
+Fig. 3. The proposed framework for KMGPR consists of an offline training
+phase and an online prediction phase. In the offline training phase, K-Means
+clustering selects a representative SoD {(X′
+k, Y′
+k)}M
+k=1 from the full dataset
+for hyperparameter optimization. During the online prediction phase, the
+trained KMGPR model outputs the predicted position µY∗and the predictive
+covariance ΣY∗based on the observed motion window X∗,t−T :t.
+elbow point. The value of K at this elbow point is identified
+as the optimal M.
+Once the optimal number of clusters M is identified, the
+representative SoD {(X′
+k, Y′
+k)}M
+k=1 is obtained as follows.
+Within each cluster Sk, the training input Xi ∈Sk closest
+to the centroid Ck is extracted. This input, together with
+its corresponding output Yi, constitutes the representative
+pair (X′
+k, Y′
+k). Replacing the full training dataset with this
+representative SoD reduces the overall time complexity from
+O(N 3) to O(M 3). The framework of the proposed KMGPR
+model is illustrated in Fig. 3.
+IV. VALIDATION EXAMPLE
+This section presents a comparative evaluation of the
+proposed KMGPR model against the standard GPR.
+A. Validation Setup
+The two-dimensional motion data used for training and
+testing were generated using MATLAB. All validations were
+conducted on an Intel Core i5-12400 CPU with 16 GB of
+RAM. The detailed parameter settings for KMGPR and GPR
+are summarized in Table I.
+1) Preparation Stage: The training dataset consists of 30
+trajectories representing target-directed human motions. All
+trajectories originated from the initial position (0, 0) and
+navigated towards three distinct targets within 10 seconds at a
+sampling interval of 0.1 s. According to the validation split in
+Table I, 24 trajectories were allocated for the training phase,
+while the remaining 6 were used to validate the training process.
+TABLE I
+PARAMETERS FOR MODEL TRAINING
+Parameters
+Values
+Window size
+10
+Kernel function
+SE
+Epochs
+250
+Initial learning rate
+0.05
+Validation split
+0.2
+Optimizer
+Adam
+Loss function
+Mean square error
+(a)
+(b)
+Fig. 4.
+Distribution of the training data: (a) the full dataset (N = 2424
+windows), and (b) the SoD generated by K-Means clustering (M = 484
+windows).
+Elbow point
+Fig. 5. The SSE curve using the Elbow method for determining the optimal
+number of clusters. The subset size was evaluated from 121 to 2424 (5% to
+100% of the total windows) to ensure sufficient data for model training.
+The 24 training trajectories were processed through a sliding
+window approach, as depicted in Fig.4 (a), generating a total
+of 2424 windows, which imposes a significant computational
+burden on the standard GPR.
+To reduce this computational burden, the Elbow method-
+based K-Mean algorithm in Section III-C was applied to extract
+a SoD from the training data. By evaluating the SSE curve via
+the Elbow method in Fig. 5, the optimal number of clusters
+was determined to be M = 484. This corresponds to an
+80% reduction in the size of training data (from 2424 to 484
+windows). As can be seen from Fig. 4(b), despite retaining only
+20% of the original windows, the SoD effectively preserves
+the coverage of the full dataset, demonstrating the robustness
+of K-Means in extracting a representative subset.
+2) Validation Scenarios: To evaluate the predictive perfor-
+mance of the proposed model, two distinct test scenarios were
+designed to reflect typical situations encountered in HRC.
+The first scenario focuses on nominal tasks to evaluate the
+model’s accuracy across trajectories that are consistent with
+the training data. In this scenario, the human hand moves from
+the initial position (0, 0) to one of three predefined targets.
+The second scenario evaluates the model’s robustness when
+facing motion patterns not seen during training. In this
+case, the hand initially moves toward Target 2 at a normal
+speed. However, the human operator suddenly stops, remains
+stationary for several seconds, and eventually resumes moving
+toward the target.
+TABLE II
+PERFORMANCE COMPARISON ON NOMINAL TRAJECTORIES
+MSE (×10−6m2)
+Prediction
+Model
+Target 1
+Target 2
+Target 3
+Overall
+Time (s)
+KMGPR
+0.12
+0.40
+0.12
+0.21
+4.62
+GPR
+0.09
+0.36
+0.10
+0.19
+41.09
+(a)
+(b)
+(c)
+(d)
+(e)
+(f)
+(g)
+(h)
+(i)
+Fig. 6. Prediction performance of KMGPR with uncertainty estimates shown
+as 95% confidence intervals under nominal trajectories: (a, d, g) are x-axis
+position; (b, e, h) are y-axis position; (c, f, i) are two-dimensional trajectories
+for Target 1, Target 2, and Target 3, respectively.
+B. Validation Results and Analytics
+1) Scenario 1 - Nominal Trajectories: In this scenario, both
+models including KMGPR and GPR are evaluated on nominal
+trajectories toward three learned targets. The quantitative results
+in Table II show that KMGPR achieves an overall MSE of
+0.21×10−6 m2, while standard GPR achieves 0.19×10−6 m2,
+demonstrating that both models maintain nearly equivalent
+prediction accuracy across all three targets. Regarding com-
+putational efficiency, KMGPR reduces the prediction time by
+approximately a factor of eight compared to standard GPR.
+This is attributed to the elbow method-based K-Means, which
+extracts a SoD of M = 484 samples from the initial training
+set of N = 2424, which is then utilized in the prediction phase
+as illustrated in Fig. 3.
+The uncertainty estimation capability of the KMGPR model
+is evaluated using the 95% confidence interval. As depicted in
+Fig. 6, despite relying on merely 20% of the original data, the
+KMGPR model maintains consistently low uncertainty across
+three predefined targets, demonstrating that the extracted SoD
+still provides sufficient data to yield high-confidence predictions
+in nominal scenarios.
+The results of Scenario 1 confirm that applying K-Means to
+select a representative subset still maintains prediction accuracy
+nearly equivalent to standard GPR, while preserving uncertainty
+estimation capability and reducing significant computational
+workload.
+2) Scenario 2 - Abrupt Motion Changes: In Scenario 2,
+both models are evaluated on an atypical trajectory with abrupt
+changes in motion. Specifically, the trajectory consists of two
+distinct phases: the human operator first accelerates from t =
+3.3 s, then stops abruptly at t = 4.0 s. When evaluated over
+the entire trajectory, standard GPR achieves a slightly lower
+overall MSE than KMGPR (4.42×10−6 m2 versus 5.23×10−6
+m2). However, this metric does not fully capture the behavioral
+differences observed across distinct phases of this scenario.
+As the human operator begins accelerating around t = 3.3 s,
+the predictions exhibit inherent latency, failing to track the
+motion instantaneously and thus falling behind the ground
+truth. Subsequently, as the motion decelerates and stops
+abruptly at t = 4.0 s, both models overshoot the stationary
+position. Notably, the uncertainty estimates of both models
+expand significantly at this stage, indicating a sharp drop in
+prediction confidence because such sudden deceleration patterns
+are absent from the training data. From this point, the two
+models exhibit markedly different behaviors. As shown in
+Fig.7(c), after overshooting, KMGPR returns to the stationary
+position along a stable recovery trajectory without chattering.
+In contrast, Fig.7(f) shows that standard GPR exhibits a
+highly oscillatory trajectory, making a wider deviation before
+eventually converging to the stationary position. This difference
+(a)
+(b)
+(c)
+Ground truth 
+at t = 4s
+Predicted
+at t = 4s
+(d)
+(e)
+(f)
+Ground truth 
+at t = 4s
+Predicted
+at t = 4s
+Fig. 7. Comparing two models under abrupt motion changes with uncertainty
+estimates shown as 95% confidence intervals: (a), (d) are x-axis position; (b),
+(e) are y-axis position; (c), (f) are two-dimensional trajectories of the KMGPR
+and the standard GPR, respectively.
+Fig. 8. Comparison of length scales across input features for standard GPR
+and KMGPR on (a) x-axis, (b) y-axis
+is attributed to the ARD length-scale values learned by each
+model, as presented in Fig. 8. Across all input features, KMGPR
+learns larger length scales than standard GPR. These length-
+scale values are the direct consequence of the log-marginal
+likelihood optimization, in which the balance between the data-
+fit term (−1
+2y⊤ K + σ2
+nI
+−1 y) and the complexity penalty
+(−1
+2 log
+K + σ2
+nI
+) in (4) is governed by the size of the
+training dataset [17]. For the standard GPR, the large training
+dataset places greater pressure on the data-fit term, driving the
+algorithm to converge toward smaller length scales. In contrast,
+K-Means clustering significantly reduces the number of training
+points, thereby diminishing the pressure on the data-fit term and
+allowing the optimization to converge at larger length scales.
+Under such conditions, the small length scales of standard
+GPR produce sharp variations in the predictive function [17].
+This causes the predictions to oscillate strongly, deviating
+significantly from the human’s actual stopping intention. Unlike
+standard GPR, with larger length scales, KMGPR interprets this
+unseen state through a slowly varying function, maintaining
+predictions that gradually converge to the stationary state.
+V. CONCLUSION AND FUTURE WORK
+This paper proposed a KMGPR model for the human motion
+prediction problem in HRC. By utilizing K-Means clustering to
+select a representative subset, the proposed method significantly
+reduces computational complexity compared to standard GPR,
+while maintaining motion prediction accuracy and uncertainty
+quantification through predictive variance. Validation results
+demonstrate that the model maintains prediction accuracy nearly
+equivalent to standard GPR while reducing computation time
+by approximately eight times. In the abrupt motion change
+scenario, KMGPR exhibits greater prediction stability with
+significantly fewer oscillations compared to standard GPR.
+Future work will focus on validating with real-world pHRI in
+three-dimensional framework and developing adaptive schemes
+based on predicted uncertainty.
+REFERENCES
+[1] Wang, L., Gao, R., V´ancza, J., Kr¨uger, J., Wang, X., Makris, S. &
+Chryssolouris, G. Symbiotic human-robot collaborative assembly. CIRP
+Annals. 68, 701-726 (2019)
+[2] Ajoudani, A., Zanchettin, A., Ivaldi, S., Albu-Sch¨affer, A., Kosuge, K.
+& Khatib, O. Progress and prospects of the human–robot collaboration.
+Autonomous Robots. 42, 957-975 (2018,6,1)
+[3] Jahanmahin, R., Masoud, S., Rickli, J. & Djuric, A. Human-robot
+interactions in manufacturing: A survey of human behavior modeling.
+Robotics And Computer-Integrated Manufacturing. 78 pp. 102404 (2022)
+[4] Robla-G´omez, S., Becerra, V., Llata, J., Gonz´alez-Sarabia, E., Torre-
+Ferrero, C. & P´erez-Oria, J. Working Together: A Review on Safe
+Human-Robot Collaboration in Industrial Environments. IEEE Access. 5
+pp. 26754-26773 (2017)
+[5] Villani, V., Pini, F., Leali, F. & Secchi, C. Survey on human–robot
+collaboration in industrial settings: Safety, intuitive interfaces and
+applications. Mechatronics. 55 pp. 248-266 (2018)
+[6] Franceschi, P., Bertini, F., Braghin, F., Roveda, L., Pedrocchi, N. & Beschi,
+M. Learning Human Motion Intention for pHRI Assistive Control. 2023
+IEEE/RSJ International Conference On Intelligent Robots And Systems
+(IROS). pp. 7870-7877 (2023)
+[7] Rudenko, A., Palmieri, L., Herman, M., Kitani, K., Gavrila, D. & Arras,
+K. Human motion trajectory prediction: a survey. The International
+Journal Of Robotics Research. 39, 895-935 (2020)
+[8] Hoffman, G., Bhattacharjee, T. & Nikolaidis, S. Inferring Human Intent
+and Predicting Human Action in Human–Robot Collaboration. Annual
+Review Of Control, Robotics, And Autonomous Systems. 7, 73-95 (2024)
+[9] Karbouj, B., Garha, R., KeßLer, K. & Kr¨uger, J. Adaptive Robotic
+Behavior in Industrial Human–Robot Collaboration: A Systematic Review
+of Taxonomies, Enabling Mechanisms, and Research Frontiers. IEEE
+Access. 14 pp. 1398-1422 (2026)
+[10] Ferrari, M., Sandrini, S., Tonola, C., Villagrossi, E. & Beschi, M.
+Predicting Human Motion using the Unscented Kalman Filter for Safe
+and Efficient Human-Robot Collaboration. 2024 IEEE 29th International
+Conference On Emerging Technologies And Factory Automation (ETFA).
+pp. 1-8 (2024)
+[11] Sabbah, M., Wojciechowski, K., Soh, H., Hsu, D., Righetti, L., Mansard,
+N., Watier, B. & Bonnet, V. Optimal Motion Prediction for Human-to-
+Robot Handovers. 2025 IEEE International Conference On Robotics And
+Biomimetics (ROBIO). pp. 262-268 (2025)
+[12] Zhang, J., Liu, H., Chang, Q., Wang, L. & Gao, R. Recurrent neural
+network for motion trajectory prediction in human-robot collaborative
+assembly. CIRP Annals. 69, 9-12 (2020)
+[13] Dang, V., Kotake, H., Honji, S. & Wada, T. A Cooperation Control
+Framework Based on Admittance Control and Time-Varying Passive
+Velocity Field Control for Human–Robot Co-Carrying Tasks. IEEE
+Transactions On Automation Science And Engineering. 22 pp. 23579-
+23593 (2025)
+[14] Martinez, J., Black, M. & Romero, J. On Human Motion Prediction
+Using Recurrent Neural Networks. 2017 IEEE Conference On Computer
+Vision And Pattern Recognition (CVPR). pp. 4674-4683 (2017)
+[15] Li, Q., Zhang, Z., You, Y., Mu, Y. & Feng, C. Data Driven Models for
+Human Motion Prediction in Human-Robot Collaboration. IEEE Access.
+8 pp. 227690-227702 (2020)
+[16] Li, M., Qin, J., Wang, Z., Liu, Q., Shi, Y. & Wang, Y. Optimal
+Motion Planning Under Dynamic Risk Region for Safe Human–Robot
+Cooperation. IEEE/ASME Transactions On Mechatronics. 30, 1050-1060
+(2025)
+[17] Rasmussen, C. & Williams, C. Gaussian Processes for Machine Learning.
+(The MIT Press,2005,11)
+[18] Yan, W., Qiu, H. & Xue, Y. Gaussian process for long-term time-series
+forecasting. 2009 International Joint Conference On Neural Networks.
+pp. 3420-3427 (2009)
+[19] Liu, H., Ong, Y., Shen, X. & Cai, J. When Gaussian Process Meets
+Big Data: A Review of Scalable GPs. IEEE Transactions On Neural
+Networks And Learning Systems. 31, 4405-4423 (2020)
+[20] Syakur, M., Khotimah, B., Rochman, E. & Satoto, B. Integration K-
+Means Clustering Method and Elbow Method For Identification of The
+Best Customer Profile Cluster. IOP Conference Series: Materials Science
+And Engineering. 336, 012017 (2018,4)
