@@ -101,7 +101,7 @@ SCENARIO_NAMES = {
     18: "Change+Obstacle_Initial_3_Target_2"
 }
 
-SAVE_DIR_OVERRIDE = None
+SAVE_DIR_OVERRIDE = "Simulation_Results"
 
 def get_save_dir(base_dir=None):
     if SAVE_DIR_OVERRIDE:
