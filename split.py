@@ -2,7 +2,7 @@ import os
 import json
 from sklearn.model_selection import train_test_split
 
-folder_path = 'Experiment_Test_Trajectory_HRI'
+folder_path = 'Filtered_Cocarry_Logs'
 file_list = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
 
 print(f"Tổng số file CSV tìm thấy: {len(file_list)}")

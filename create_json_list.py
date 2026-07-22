@@ -42,6 +42,6 @@ def create_csv_list_json(folder_path, output_json_path):
         print(f"Lỗi khi tạo file JSON: {e}")
 
 if __name__ == "__main__":
-    folder_path = "Test_Data"  # Thay đổi đường dẫn thư mục tại đây
-    output_json_path = "test_file_list.json"  # Tên file JSON output
+    folder_path = "Filtered_Cocarry_Logs"  # Thay đổi đường dẫn thư mục tại đây
+    output_json_path = "train_file_list.json"  # Tên file JSON output
     create_csv_list_json(folder_path, output_json_path)
