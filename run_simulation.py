@@ -68,7 +68,7 @@ def main():
 
         # Tính n_keep: cắt phần đuôi đứng im (vận tốc < 5 cm/s) — giống outer_loop
         _vel = np.linalg.norm(np.diff(test_data, axis=0), axis=1) / DT
-        _below = _vel < 0.0
+        _below = _vel < 0.05
         if not np.all(_below):
             _last_active = int(np.where(~_below)[0][-1])
             n_keep = _last_active + 2
@@ -106,7 +106,6 @@ def main():
         mae        = np.mean(np.sqrt(np.sum(errors**2, axis=1)))
         rmse       = np.sqrt(np.mean(np.sum(errors**2, axis=1)))
 
-        phi_arr    = np.asarray(results['phi_history'])
 
         print(f"   MAE: {mae:.4f} m | RMSE: {rmse:.4f} m")
 

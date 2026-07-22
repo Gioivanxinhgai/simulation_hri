@@ -26,6 +26,7 @@ class PythonRobotDynamics:
         
         # PD Control Parameters
         self.k_p = K_P
+        self.LEADER_DECAY = 0.95  # Hệ số giảm năng lượng Admittance mỗi sub-step khi ở LEADER
 
         def _make_pd(k_p):
             k_d = 2.0 * np.sqrt(k_p * self.M_rob) - self.c_v   
@@ -66,8 +67,6 @@ class PythonRobotDynamics:
             return self.x_robot.copy(), np.zeros(3), x_ref_in.copy(), f_h.copy()
             
         f_r = np.zeros(3)
-        
-        self.LEADER_DECAY = 0.95
 
         # Feedforward velocity tự đạo hàm của blended x_ref
         dx_ref_ff = (x_ref_in - self.x_ref_prev) / self.dt
@@ -94,10 +93,8 @@ class PythonRobotDynamics:
             self.x_adm = self.x_adm * decay_factor
             self.dx_adm = self.dx_adm * decay_factor
             
-            # Tính toán đích (desired position/velocity)
             x_d = x_ref_current + self.x_adm
             dx_d = dx_ref_ff + self.dx_adm
-            x_d_final = x_d  # Lưu lại x_d ở sub-step cuối để return ra ngoài
             
             # PD Tracking Control
             e_pos = x_d - self.x_robot
@@ -117,4 +114,4 @@ class PythonRobotDynamics:
             
         self.x_ref_prev = x_ref_in.copy()
         
-        return self.x_robot.copy(), f_r.copy(), x_d_final.copy(), f_h.copy()
+        return self.x_robot.copy(), f_r.copy(), x_d.copy(), f_h.copy()

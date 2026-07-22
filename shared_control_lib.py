@@ -1,6 +1,5 @@
 import os
 import pickle
-import time
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -15,7 +14,7 @@ warnings.filterwarnings("ignore")
 from config import (
     GMM_CHECKPOINT_DIR, GMM_MODEL_PATH, GMM_SCALER_PATH,
     SVGP_CHECKPOINT_DIR, TEST_FOLDER,
-    P_LOW, P_HIGH, P_HYSTERESIS, DT,
+    P_HIGH, P_HYSTERESIS, DT,
     SVGP_HISTORY_SIZE, GMM_WINDOW_SIZE, TAU_SOFTMAX, SIGMA,
     FITTS_A, FITTS_B, FITTS_W,
     GOALS, GROUND_TRUTH, PHI_ANGLE
@@ -27,7 +26,6 @@ class ControlMode:
 
 MODE_BACKGROUND_COLORS = {
     ControlMode.FOLLOWER: None,       # Nền trắng (không tô)
-    "SHARED": None,                  # Nền trắng (không tô)
     ControlMode.LEADER: "#d62728",    # Màu đỏ nhạt / Pastel Red
 }
 MODE_BACKGROUND_ALPHA = 0.3
@@ -339,8 +337,6 @@ def plot_simulation_results(test_data, results, trajectory_name, true_target, sa
 
     ax1.axhline(y=P_HIGH, color='r', linestyle='--', zorder=2,
                 linewidth=1, alpha=0.7, label=f'P_HIGH ({P_HIGH})')
-    ax1.axhline(y=P_LOW, color='purple', linestyle='--', zorder=2,
-                linewidth=1, alpha=0.7, label=f'P_LOW ({P_LOW})')
 
     ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Probability')

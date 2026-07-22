@@ -25,9 +25,6 @@ FITTS_W = 0.08
 
 #5 OUTER LOOP 
 MJM_METHOD = "CURRENT"
-
-USE_GT_TIME_CHEAT = True
-P_LOW              = 0.6 
 P_HIGH             = 0.8 
 P_HYSTERESIS       = 0.05
 
@@ -101,21 +98,20 @@ SCENARIO_NAMES = {
     18: "Change+Obstacle_Initial_3_Target_2"
 }
 
-SAVE_DIR_OVERRIDE = "Simulation_Results"
+SAVE_DIR_OVERRIDE = None
 
 def get_save_dir(base_dir=None):
-    if SAVE_DIR_OVERRIDE:
-        name = SAVE_DIR_OVERRIDE
+    if MJM_METHOD == "PAPER":
+        param_name = (f"MJM_PAPER_{LEADER_COOLDOWN}_{BLEND_STEPS}_"
+                      f"{PHI_ANGLE}_{N_CONFLICT_REQUIRED}_{N_CONFIDENCE_REQUIRED}_"
+                      f"{C_V}_{F_C}_{K_H}_{K_P}_{K_D:.2f}")
     else:
-        cheat_suffix = "_GTCHEAT" if USE_GT_TIME_CHEAT else ""
-        if MJM_METHOD == "PAPER":
-            name = (f"MJM_PAPER_{LEADER_COOLDOWN}_{BLEND_STEPS}_"
-                    f"{PHI_ANGLE}_{N_CONFLICT_REQUIRED}_{N_CONFIDENCE_REQUIRED}_"
-                    f"{C_V}_{F_C}_{K_H}_{K_P}_{K_D:.2f}{cheat_suffix}")
-        else:
-            name = (f"MJM_CURRENT_{LEADER_COOLDOWN}_{BLEND_STEPS}_"
-                    f"{PHI_ANGLE}_{N_CONFLICT_REQUIRED}_{N_CONFIDENCE_REQUIRED}_"
-                    f"{C_V}_{F_C}_{K_H}_{K_P}_{K_D:.2f}{cheat_suffix}")
+        param_name = (f"MJM_CURRENT_{LEADER_COOLDOWN}_{BLEND_STEPS}_"
+                      f"{PHI_ANGLE}_{N_CONFLICT_REQUIRED}_{N_CONFIDENCE_REQUIRED}_"
+                      f"{C_V}_{F_C}_{K_H}_{K_P}_{K_D:.2f}")
+    
+    folder_name = SAVE_DIR_OVERRIDE if SAVE_DIR_OVERRIDE else param_name
+    
     if base_dir is None:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_dir, name)
+    return os.path.join(base_dir, "Simulation_Results", folder_name)

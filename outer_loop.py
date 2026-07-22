@@ -3,28 +3,8 @@ from inner_loop import PythonRobotDynamics
 from config import (
     MJM_METHOD, LEADER_COOLDOWN, BLEND_STEPS, PHI_ANGLE,
     N_CONFLICT_REQUIRED, N_CONFIDENCE_REQUIRED,
-    K_H, K_H_REDUCE_FACTOR, K_H_REDUCE_STEPS, FORCE_DEADZONE,
-    USE_GT_TIME_CHEAT
+    K_H, K_H_REDUCE_FACTOR, K_H_REDUCE_STEPS, FORCE_DEADZONE
 )
-
-def _gt_time_to_goal(test_data, t_start, goal_pos, dt):
-    """
-    [CHEAT] Ước lượng t_f từ bước t_start đến khi ground truth
-    đến gần nhất goal_pos.
-
-    Logic:
-      - Xét test_data[t_start:]
-      - Tìm index i* = argmin ||test_data[t_start + i] - goal_pos||
-      - t_f = i* * dt  (thời gian kể từ bước hiện tại)
-      - Đảm bảo t_f >= dt (tối thiểu 1 bước)
-    """
-    future = test_data[t_start:]
-    if len(future) == 0:
-        return dt
-    dists = np.linalg.norm(future - goal_pos[np.newaxis, :], axis=1)
-    idx_min = int(np.argmin(dists))
-    t_gt = max(idx_min * dt, dt)  # ít nhất 1 bước
-    return float(t_gt)
 
 
 def compute_disagreement(f_h: np.ndarray, f_r: np.ndarray) -> float:
@@ -70,7 +50,7 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
         ControlMode, compute_goal_probabilities, predict_next_point_svgp,
         dynamic_minimum_jerk_trajectory, fitts_law_duration,
         paper_mjm_step,
-        P_LOW, P_HIGH, P_HYSTERESIS, DT,
+        P_HIGH, P_HYSTERESIS, DT,
         SVGP_HISTORY_SIZE, GMM_WINDOW_SIZE, TAU_SOFTMAX
     )
     import time as _time
@@ -92,8 +72,8 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
     # ⑥ Lịch sử chuyển đổi mode: {'step', 'time_s', 'from', 'to', 'goal_id'}
     mode_transitions    = []
 
-    timing = {'gmm': 0., 'svgp': 0., 'mjm': 0., 'matlab': 0.,
-              'gmm_n': 0, 'svgp_n': 0, 'mjm_n': 0, 'matlab_n': 0}
+    timing = {'gmm': 0., 'svgp': 0., 'mjm': 0., 'bridge': 0.,
+              'gmm_n': 0, 'svgp_n': 0, 'mjm_n': 0, 'bridge_n': 0}
 
     # State Variables chung
     current_goal_id = None
@@ -112,11 +92,7 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
     x_0_paper = test_data[0].copy()  # Cố định từ đầu
     tau_paper = 0.0
     paper_cached_goal_id = None  # Phát hiện khi goal đổi → print log
-    t_f_paper_current = 12.0    # t_f cho PAPER mode (có thể cập nhật theo GT cheat)
-
-    # Shrinking Horizon (không dùng cho PAPER)
-    t_fitts_initial = 0.0
-    mpc_step_index = 0
+    t_f_paper_current = 12.0    # t_f cho PAPER mode (cố định theo dataset)
 
     # Early-stop: điểm dừng sớm khi vận tốc < 5 cm/s cách phần còn lại
     # Được cắt sẵn từ test_data trước khi vào vòng lặp
@@ -140,7 +116,7 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
     leader_entry_blend_remaining = 0  # Số bước blend còn lại khi mới vào LEADER
     leader_entry_anchor = None        # Vị trí robot lúc bắt đầu vào LEADER
 
-    print(f"  MJM_METHOD={MJM_METHOD}  |  P_LOW={P_LOW}  P_HIGH={P_HIGH}")
+    print(f"  MJM_METHOD={MJM_METHOD}  |  P_HIGH={P_HIGH}")
 
     current_x_robot = test_data[0].copy()
     for t in range(n_steps):
@@ -150,17 +126,16 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
         if t == 0:
             x_ref = test_data[0].copy()
             current_x_robot, f_r_raw, x_d_step, f_h = bridge.step(x_ref, x_h, 0.0)
-            f_r_filtered = f_r_raw.copy()
 
             x_ref_history.append(x_ref.copy())
             x_d_history.append(x_d_step.copy())
             robot_trajectory.append(current_x_robot.copy())
             modes.append(ControlMode.FOLLOWER)
             # Tính phi ngay sau khi có lực của bước t=0
-            phi = compute_disagreement(f_h, f_r_filtered)
+            phi = compute_disagreement(f_h, f_r_raw)
             phi_history.append(phi)
             f_h_history.append(f_h.copy())
-            f_r_history.append(f_r_filtered.copy())
+            f_r_history.append(f_r_raw.copy())
             # Assist Energy: A = -f_h^T(x_d - x_robot)
             tracking_error_0 = x_d_step - current_x_robot
             assist_energy_history.append(float(-np.dot(f_h, tracking_error_0)))
@@ -262,18 +237,10 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
                     # Khởi động leader-entry blend (giảm gai vận tốc)
                     leader_entry_blend_remaining = BLEND_STEPS
                     leader_entry_anchor = current_x_robot.copy()
-
-                    # [CHEAT] Cập nhật t_f theo ground truth (thay vì cố định 12.0)
-                    if USE_GT_TIME_CHEAT:
-                        t_f_paper_current = _gt_time_to_goal(test_data, t, goal_pos, DT)
-                        print(f"   [PAPER-MJM][CHEAT] t={t*DT:.2f}s, "
-                              f"goal={current_goal_id}, "
-                              f"GT t_f={t_f_paper_current:.2f}s (Fitts sẽ là N/A)")
-                    else:
-                        t_f_paper_current = 12.0
-                        print(f"   [PAPER-MJM] t={t*DT:.2f}s, "
-                              f"X_0={x_0_paper}, X_f={goal_pos}, "
-                              f"dist={np.linalg.norm(goal_pos - x_0_paper):.4f}m")
+                    print(f"   [PAPER-MJM] t={t*DT:.2f}s, "
+                          f"X_0={x_0_paper}, X_f={goal_pos}, "
+                          f"dist={np.linalg.norm(goal_pos - x_0_paper):.4f}m, "
+                          f"t_f={t_f_paper_current:.2f}s")
 
                 # Mỗi bước: tìm τ từ vị trí hiện tại → tính điểm tiếp theo
                 _t0 = _time.perf_counter()
@@ -302,16 +269,10 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
                     x_0_mjm = current_x_robot.copy()
                     mjm_cached_goal_id = current_goal_id
                     t_remaining = (n_steps - 1 - t) * DT  # Thời gian thực tế còn lại
-
-                    if USE_GT_TIME_CHEAT:
-                        # [CHEAT] Dùng thời gian GT đến điểm gần nhất với goal
-                        t_gt_cheat = _gt_time_to_goal(test_data, t, goal_pos, DT)
-                        t_fitts = min(t_gt_cheat, t_remaining)
-                        print(f"   [CURRENT-MJM][CHEAT] t={t*DT:.2f}s, "
-                              f"goal={current_goal_id}, "
-                              f"GT t_f={t_gt_cheat:.2f}s → used={t_fitts:.2f}s")
-                    else:
-                        t_fitts = min(fitts_law_duration(x_0_mjm, goal_pos), t_remaining)
+                    t_fitts = min(fitts_law_duration(x_0_mjm, goal_pos), t_remaining)
+                    print(f"   [CURRENT-MJM] t={t*DT:.2f}s, "
+                          f"goal={current_goal_id}, "
+                          f"Fitts t_f={t_fitts:.2f}s")
 
                     _t0 = _time.perf_counter()
                     mjm_trajectory_cache = dynamic_minimum_jerk_trajectory(
@@ -396,8 +357,8 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
 
         _t0 = _time.perf_counter()
         current_x_robot, f_r, x_d_step, f_h = bridge.step(x_ref, x_h, is_leader, k_h=k_h_current)
-        timing['matlab'] += _time.perf_counter() - _t0
-        timing['matlab_n'] += 1
+        timing['bridge'] += _time.perf_counter() - _t0
+        timing['bridge_n'] += 1
 
         # f_r thô vẫn được log; phi dùng f_r_for_phi đã smooth (rolling window)
         f_r_smooth = f_r.copy()
@@ -429,7 +390,7 @@ def run_control_loop(test_data, gmm_models, gmm_scaler,
     print(f"  GMM:    {timing['gmm']:.2f}s  ({_avg('gmm')*1000:.1f} ms/call)")
     print(f"  SVGP:   {timing['svgp']:.2f}s  ({_avg('svgp')*1000:.1f} ms/call)")
     print(f"  MJM:    {timing['mjm']:.2f}s  ({_avg('mjm')*1000:.1f} ms/call, {timing['mjm_n']} calls)")
-    print(f"  COMMUNICATION: {timing['matlab']:.2f}s  ({_avg('matlab')*1000:.1f} ms/call)")
+    print(f"  BRIDGE: {timing['bridge']:.2f}s  ({_avg('bridge')*1000:.1f} ms/call)")
     print(f"{'='*50}\n")
 
     # ⑥ Thêm thống kê chuyển đổi mode vào summary
