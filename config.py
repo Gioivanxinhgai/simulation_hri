@@ -1,13 +1,13 @@
 import numpy as np
 import os
 
-GMM_CHECKPOINT_DIR  = "gmm_model_hri"
+GMM_CHECKPOINT_DIR  = "pHRI_Models/gmm_model_hri"
 GMM_MODEL_PATH      = os.path.join(GMM_CHECKPOINT_DIR, "gmm_models.pkl")
 GMM_SCALER_PATH     = os.path.join(GMM_CHECKPOINT_DIR, "scaler.pkl")
 
-SVGP_CHECKPOINT_DIR = "svgp_hri_m52"
+SVGP_CHECKPOINT_DIR = "pHRI_Models/svgp_hri_m52"
 
-TEST_FOLDER         = "Experiment_Test_Trajectory_HRI"
+TEST_FOLDER         = "Experiment_Data/Experiment_Test_Trajectory_HRI"
 TEST_FILE_LIST      = "test_file_list.json"
 
 #2 GMM 
